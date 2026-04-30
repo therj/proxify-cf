@@ -144,6 +144,7 @@ dist
 ### CloudflareWorkers ###
 /dist
 /.mf
+.wrangler
 
 ### VisualStudioCode ###
 .vscode/*
