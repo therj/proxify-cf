@@ -19,7 +19,7 @@ Run from the repo root (or `cd apps/worker` and drop `cd apps/worker &&`):
 ```bash
 cd apps/worker
 pnpm exec wrangler d1 create proxify-db
-pnpm exec wrangler kv namespace create CACHE
+pnpm exec wrangler kv namespace create proxify_cache
 ```
 
 Copy the **database ID** and **KV namespace ID** from the command output.
@@ -131,7 +131,7 @@ Restrict **`deploy.yml`** to trusted branches (e.g. only `main`) so forks cannot
 ## 8. Cloudflare Access checklist
 
 - [ ] Access application(s) for the Worker hostname (SSO/MFA as needed).
-- [ ] Path **exclude** or bypass for **`/auth-proxy/*`** so token endpoints work without interactive login (see [`DEVELOPMENT.md`](DEVELOPMENT.md)).
+- [ ] Path **exclude** or bypass for **`/health`** (monitors) while **protecting `/admin/*`** with Cloudflare Access as needed (see [`DEVELOPMENT.md`](DEVELOPMENT.md)).
 - [ ] Smoke-test **`/`** (landing), **`/admin/`** (admin SPA), and **`/admin/api/v1/*`** after deploy.
 
 ---

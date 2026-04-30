@@ -8,8 +8,6 @@ import { getAuditLogs, appendAudit } from '../repo/audit';
 
 export const adminRoutes = new Hono<{ Bindings: Env }>();
 
-adminRoutes.get('/health', (c) => c.json({ status: 'ok' }));
-
 // --- Routes API ---
 adminRoutes.get('/routes', async (c) => {
   try {

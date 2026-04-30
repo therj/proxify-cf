@@ -4,6 +4,7 @@ import { proxyHandler } from './proxy/handler';
 import { Env } from './env';
 import { HOME_HTML } from './homeHtml';
 import { findRouteForRequest } from './repo/routes';
+import { healthRoutes } from './health/routes';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -20,8 +21,8 @@ app.get('/', async (c) => {
 // Admin panel JSON API
 app.route('/admin/api/v1', adminRoutes);
 
-// Liveness for monitors (must be registered before `/admin/*` static assets)
-app.get('/admin/health', (c) => c.json({ status: 'ok' }));
+// Health / probes — `/health/*`, not under `/admin`
+app.route('/health', healthRoutes);
 
 // Admin SPA + static files (Vite base `/admin/` → dist/admin/...)
 // Fetching `GET /admin` via ASSETS alone often returns 307 → `/admin/`, which can loop with the SPA;
