@@ -1,0 +1,27 @@
+name = "proxify-cf"
+main = "src/index.ts"
+compatibility_date = "2026-04-30"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "proxify-db"
+database_id = "local-dev-id" # placeholder for actual D1 ID
+migrations_dir = "./migrations"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "local-cache-id" # placeholder for actual KV ID
+
+[vars]
+CF_ACCESS_TEAM_DOMAIN = ""
+CF_ACCESS_AUD = ""
+LOCAL_ADMIN_EMAIL = "admin@example.com"
+# KEK should be added as a secret in production
+
+[assets]
+directory = "../admin/dist"
+binding = "ASSETS"
+run_worker_first = true
+not_found_handling = "single-page-application"
+

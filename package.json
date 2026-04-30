@@ -1,0 +1,16 @@
+{
+  "name": "proxify-cf",
+  "private": true,
+  "scripts": {
+    "setup": "tsx scripts/setup.ts",
+    "dev": "pnpm --parallel --filter worker --filter admin dev",
+    "gen:token": "tsx scripts/gen-token.ts",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
+  }
+}
