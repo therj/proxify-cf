@@ -28,3 +28,14 @@ export async function createGrant(
 export async function revokeGrant(db: D1Database, client_id: string, route_id: string): Promise<void> {
   await db.prepare(`DELETE FROM client_route_grants WHERE client_id = ?1 AND route_id = ?2`).bind(client_id, route_id).run();
 }
+
+export async function hasGrant(db: D1Database, client_id: string, route_id: string): Promise<boolean> {
+  const res = await db
+    .prepare(
+      `SELECT 1 AS ok FROM client_route_grants WHERE client_id = ?1 AND route_id = ?2 LIMIT 1`
+    )
+    .bind(client_id, route_id)
+    .all<{ ok: number }>();
+  const rows = res.results;
+  return Array.isArray(rows) && rows.length > 0;
+}

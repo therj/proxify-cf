@@ -1,20 +1,27 @@
 import { Hono, type Context } from 'hono';
 import { adminRoutes } from './admin/routes';
-import { authProxyRoutes } from './authProxy';
 import { proxyHandler } from './proxy/handler';
 import { Env } from './env';
 import { HOME_HTML } from './homeHtml';
+import { findRouteForRequest } from './repo/routes';
 
 const app = new Hono<{ Bindings: Env }>();
 
-// Public landing (not the React admin build)
-app.get('/', (c) => c.html(HOME_HTML));
+// Public landing OR reverse-proxy when Host/path matches a configured route (e.g. proxy hostname + `/`)
+app.get('/', async (c) => {
+  const host = c.req.header('Host') ?? '';
+  const proxyRoute = await findRouteForRequest(c.env.DB, host, '/');
+  if (proxyRoute) {
+    return proxyHandler(c);
+  }
+  return c.html(HOME_HTML);
+});
 
 // Admin panel JSON API
 app.route('/admin/api/v1', adminRoutes);
 
-// Token authorization endpoints under /auth-proxy
-app.route('/auth-proxy', authProxyRoutes);
+// Liveness for monitors (must be registered before `/admin/*` static assets)
+app.get('/admin/health', (c) => c.json({ status: 'ok' }));
 
 // Admin SPA + static files (Vite base `/admin/` → dist/admin/...)
 // Fetching `GET /admin` via ASSETS alone often returns 307 → `/admin/`, which can loop with the SPA;

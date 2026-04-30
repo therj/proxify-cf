@@ -6,12 +6,12 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "proxify-db"
-database_id = "local-dev-id" # placeholder for actual D1 ID
+database_id = "25526790-127c-4f8a-9b0d-367db37d3206"
 migrations_dir = "./migrations"
 
 [[kv_namespaces]]
-binding = "CACHE"
-id = "local-cache-id" # placeholder for actual KV ID
+binding = "proxify_cache"
+id = "5044cff968f64f248d498b0264112beb"
 
 [vars]
 CF_ACCESS_TEAM_DOMAIN = ""
@@ -24,4 +24,3 @@ directory = "../admin/dist"
 binding = "ASSETS"
 run_worker_first = true
 not_found_handling = "single-page-application"
-

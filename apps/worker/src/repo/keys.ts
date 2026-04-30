@@ -67,6 +67,21 @@ export async function getKeys(db: D1Database): Promise<Key[]> {
   return Array.isArray(rows) ? rows : [];
 }
 
+export async function getKeyByKid(db: D1Database, kid: string): Promise<Key | null> {
+  const res = await db.prepare('SELECT * FROM keys WHERE kid = ?1').bind(kid).all<Key>();
+  const rows = res.results;
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+  return rows[0];
+}
+
+/** If JWT was minted via admin, reject when row exists and revoked_at is set. */
+export async function isIssuedTokenRevoked(db: D1Database, jti: string): Promise<boolean> {
+  const res = await db.prepare('SELECT revoked_at FROM issued_tokens WHERE jti = ?1').bind(jti).all<{ revoked_at: number | null }>();
+  const rows = res.results;
+  if (!Array.isArray(rows) || rows.length === 0) return false;
+  return rows[0].revoked_at != null;
+}
+
 export async function createKey(
   db: D1Database, 
   data: { client_id: string; mode: 'client_signed' | 'server_issued' },

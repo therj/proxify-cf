@@ -85,7 +85,7 @@ export const HOME_HTML = `<!DOCTYPE html>
     <p>Edge proxy control plane. Manage clients, routes, keys, and grants from the admin console.</p>
     <nav aria-label="Quick links">
       <a href="/admin">Admin panel</a>
-      <a href="/auth-proxy/health">Auth proxy health</a>
+      <a href="/admin/health">Admin health</a>
     </nav>
     <a class="btn" href="/admin">Open admin panel</a>
     <footer>API for the console lives under <code>/admin/api/v1</code></footer>

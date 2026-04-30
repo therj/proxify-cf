@@ -5,6 +5,40 @@ export async function getRoutes(db: D1Database): Promise<Route[]> {
   return results;
 }
 
+/** Normalize Host header (no port for :443/:80 style matching to stored host). */
+export function normalizeIncomingHost(hostHeader: string): string {
+  const h = hostHeader.trim().toLowerCase();
+  const withoutPort = h.split(':')[0];
+  return withoutPort;
+}
+
+/**
+ * Pick the route for this Worker hostname + path: longest matching path_prefix wins.
+ */
+export async function findRouteForRequest(
+  db: D1Database,
+  hostHeader: string,
+  pathname: string
+): Promise<Route | null> {
+  const host = normalizeIncomingHost(hostHeader);
+  const path = pathname.startsWith('/') ? pathname : `/${pathname}`;
+
+  const res = await db
+    .prepare(
+      `SELECT * FROM routes
+       WHERE lower(host) = ?1 AND disabled_at IS NULL
+         AND (path_prefix = '/' OR substr(?2, 1, length(path_prefix)) = path_prefix)
+       ORDER BY length(path_prefix) DESC
+       LIMIT 1`
+    )
+    .bind(host, path)
+    .all<Route>();
+
+  const rows = res.results;
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+  return rows[0];
+}
+
 export async function createRoute(
   db: D1Database, 
   data: Omit<Route, 'id' | 'created_at' | 'disabled_at'>
