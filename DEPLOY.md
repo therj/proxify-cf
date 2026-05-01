@@ -1,6 +1,6 @@
 # Deployment guide
 
-This repo ships **one Worker** that bundles API routes and the **admin SPA** from [`apps/admin/dist`](apps/admin/dist) via Wrangler **[assets](https://developers.cloudflare.com/workers/static-assets/)** ([`apps/worker/wrangler.toml`](apps/worker/wrangler.toml)). You normally **do not** deploy the admin to Cloudflare Pages unless you want a separate hosting setup.
+This repo ships **one Worker** that bundles API routes and the **admin SPA** from [`apps/admin/dist`](apps/admin/dist) via Wrangler **[assets](https://developers.cloudflare.com/workers/static-assets/)** ([`apps/worker/wrangler.toml`](apps/worker/wrangler.toml); template with placeholders: [`apps/worker/wrangler.toml.example`](apps/worker/wrangler.toml.example)). You normally **do not** deploy the admin to Cloudflare Pages unless you want a separate hosting setup.
 
 ---
 
@@ -28,11 +28,19 @@ Copy the **database ID** and **KV namespace ID** from the command output.
 
 ## 3. Configure `wrangler.toml`
 
-Edit [`apps/worker/wrangler.toml`](apps/worker/wrangler.toml):
+Use **[`apps/worker/wrangler.toml.example`](apps/worker/wrangler.toml.example)** as the annotated template (placeholders, comments, optional `[[routes]]` examples). Copy it and edit:
 
-1. Set **`database_id`** under `[[d1_databases]]` to your D1 UUID (replace `local-dev-id` for production use; keep a separate profile or env if you use one file for both local and remote).
-2. Set **`id`** under `[[kv_namespaces]]` to your KV namespace id (replace `local-cache-id`).
-3. Add your Cloudflare **account id** (recommended for CI and clarity):
+```bash
+cd apps/worker
+cp wrangler.toml.example wrangler.toml
+```
+
+If you already have a filled-in **`wrangler.toml`** for your site, keep it — the example is for new setups or diffing against a safe baseline without real IDs in docs.
+
+1. Set **`database_id`** under `[[d1_databases]]` to your D1 UUID from §2 (or Dashboard).
+2. Set **`id`** under `[[kv_namespaces]]` to your KV namespace id from §2.
+3. Optionally add **`[[routes]]`** for custom hostnames (see comments in the example); omit routes to use **`*.workers.dev`** only.
+4. Add your Cloudflare **account id** (recommended for CI and clarity):
 
    ```toml
    account_id = "your-cloudflare-account-uuid"
@@ -40,7 +48,7 @@ Edit [`apps/worker/wrangler.toml`](apps/worker/wrangler.toml):
 
    You can also rely on the **`CLOUDFLARE_ACCOUNT_ID`** environment variable instead of committing `account_id`.
 
-Do **not** commit secrets such as `KEK`; use `wrangler secret put` (see below).
+Do **not** commit secrets such as **`KEK`**; use `wrangler secret put` (see below).
 
 ---
 
@@ -70,23 +78,50 @@ Optional: set [`vars`](apps/worker/wrangler.toml) or secrets for `CF_ACCESS_*`, 
 
 ## 6. Build admin and deploy the Worker
 
-The Worker deploy **must** see a fresh **`apps/admin/dist`** so static assets upload correctly.
+Wrangler uploads the Worker script plus **`[assets]`** from [`apps/worker/wrangler.toml`](apps/worker/wrangler.toml) (`directory = "../admin/dist"`). You **must** produce a fresh **`apps/admin/dist`** before each deploy so hashed bundles for `/`, `/docs`, and `/admin/*` stay correct.
 
-From the **repository root**:
+### Root `package.json` scripts
+
+These live at the **repository root** and are the intended automation surface:
+
+| Script | Runs |
+|--------|------|
+| `pnpm build` | `pnpm --filter admin build` — TypeScript check + Vite production build → `apps/admin/dist` |
+| `pnpm predeploy` | `pnpm typecheck` then `pnpm run build` — typecheck all workspaces + admin build (no deploy) |
+| `pnpm deploy` | pnpm runs **`predeploy` first** (lifecycle), then `pnpm --filter worker run deploy` |
+
+### Recommended from root
 
 ```bash
 pnpm install --frozen-lockfile
+pnpm deploy
+```
+
+`pnpm` executes the **`predeploy`** script before **`deploy`**, so you get typecheck → admin build → Wrangler in one step (same order as CI).
+
+To only typecheck and build without deploying, run **`pnpm predeploy`** by itself.
+
+### Manual equivalent
+
+```bash
+pnpm install --frozen-lockfile
+pnpm -r typecheck
 pnpm --filter admin build
 pnpm --filter worker deploy
 ```
 
-Or from `apps/worker` after building admin:
+### Deploy only from `apps/worker`
+
+This **skips** root `predeploy`. Use only after `apps/admin/dist` is up to date (e.g. you already ran `pnpm --filter admin build` or `pnpm predeploy` from the repo root):
 
 ```bash
+cd apps/worker
 pnpm run deploy
 ```
 
-Wrangler uploads the worker **and** the `[assets]` directory (`../admin/dist`). Your admin UI is served from the **same Worker URL** as the API.
+Running **`pnpm deploy` from the repo root** is safer: it always runs **`predeploy`** first, so you never deploy without a fresh build.
+
+Your admin UI is served from the **same Worker URL** as the JSON API.
 
 ### Optional: Cloudflare Pages for the admin only
 
@@ -104,12 +139,14 @@ You would then have two URLs (Pages + Worker); the stock config assumes **Worker
 
 ## 7. GitHub Actions
 
-This repo includes:
+Workflows use **Node.js 22**, **pnpm 9**, and **`pnpm install --frozen-lockfile`**.
 
-| Workflow | When | What it does |
-|----------|------|----------------|
-| [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | Push / PR to `main` | Install, `pnpm -r typecheck`, build admin |
-| [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) | Push to `main` or **Run workflow** | Typecheck, build admin, **`wrangler deploy`** |
+| Workflow | When | Steps |
+|----------|------|--------|
+| [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | Push or PR to **`main`** | Install deps → **`pnpm -r typecheck`** → **`pnpm --filter admin build`** |
+| [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) | Push to **`main`** or **workflow_dispatch** | Install deps → **`pnpm -r typecheck`** → **`pnpm --filter admin build`** → `cd apps/worker && pnpm run deploy` |
+
+The deploy job sets **`CLOUDFLARE_API_TOKEN`** and **`CLOUDFLARE_ACCOUNT_ID`** for the Wrangler step.
 
 ### Repository secrets
 
@@ -132,7 +169,7 @@ Restrict **`deploy.yml`** to trusted branches (e.g. only `main`) so forks cannot
 
 - [ ] Access application(s) for the Worker hostname (SSO/MFA as needed).
 - [ ] Path **exclude** or bypass for **`/health`** (monitors) while **protecting `/admin/*`** with Cloudflare Access as needed (see [`DEVELOPMENT.md`](DEVELOPMENT.md)).
-- [ ] Smoke-test **`/`** (landing), **`/admin/`** (admin SPA), and **`/admin/api/v1/*`** after deploy.
+- [ ] Smoke-test **`/`** (landing), **`/docs`**, **`/admin/`** (admin SPA), and **`/admin/api/v1/*`** after deploy.
 
 ---
 
@@ -160,12 +197,25 @@ Restrict **`deploy.yml`** to trusted branches (e.g. only `main`) so forks cannot
 
 ---
 
-## 10. Command reference (Wrangler 4)
+## 10. Command reference
+
+### Workspace (repo root)
 
 | Task | Command |
 |------|---------|
-| Deploy worker | `pnpm --filter worker deploy` (from root; build admin first) |
-| Remote migrations | `pnpm exec wrangler d1 migrations apply proxify-db --remote` |
-| Set secret | `pnpm exec wrangler secret put KEK` |
+| Typecheck all packages | `pnpm typecheck` |
+| Build admin SPA only | `pnpm build` |
+| Typecheck + build admin (no deploy) | `pnpm predeploy` |
+| Typecheck + build + deploy Worker | `pnpm deploy` (`predeploy` runs automatically first) |
 
-For CLI changes after upgrades, run `pnpm exec wrangler --help`.
+### Worker package (`apps/worker`)
+
+Run from **`apps/worker`** (or prefix with `pnpm exec wrangler` from that directory):
+
+| Task | Command |
+|------|---------|
+| Deploy Worker | `pnpm run deploy` |
+| Apply D1 migrations (remote) | `pnpm exec wrangler d1 migrations apply proxify-db --remote` |
+| Set `KEK` secret | `pnpm exec wrangler secret put KEK` |
+
+For Wrangler CLI changes after upgrades, run `pnpm exec wrangler --help`.

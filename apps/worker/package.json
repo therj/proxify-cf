@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "db:migrate:local": "wrangler d1 migrations apply proxify-db --local",
+    "db:pull:remote": "wrangler d1 export proxify-db --remote --no-schema --output .remote-d1-data.raw.sql && node ../../scripts/filter-d1-export.cjs && wrangler d1 execute proxify-db --local --file .remote-d1-data.sql --yes",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "test": "vitest",

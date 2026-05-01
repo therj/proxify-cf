@@ -1,0 +1,151 @@
+.footer {
+  flex-shrink: 0;
+  margin-top: auto;
+  border-top: 1px solid var(--divider-subtle);
+  background: var(--surface-bg);
+  padding: 48px clamp(24px, 5vw, 80px) 28px;
+}
+
+.grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(200px, 1.4fr) repeat(2, minmax(140px, 1fr));
+  gap: 40px 32px;
+}
+
+@media (max-width: 720px) {
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+}
+
+.colBrand {
+  min-width: 0;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-decoration: none;
+  margin-bottom: 12px;
+}
+
+.brand:hover {
+  color: var(--text-primary);
+}
+
+.brandIcon {
+  color: var(--accent-primary);
+  flex-shrink: 0;
+}
+
+.tagline {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  max-width: 28rem;
+}
+
+.colTitle {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+}
+
+.linkList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.linkList a {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.linkList a:hover {
+  color: var(--accent-primary);
+}
+
+.mono {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.apiBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inlineCode {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: var(--radius-md);
+  background: var(--code-bg);
+  color: var(--code-fg);
+  width: fit-content;
+}
+
+.bottom {
+  max-width: 1200px;
+  margin: 40px auto 0;
+  padding-top: 24px;
+  border-top: 1px solid var(--divider-subtle);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.copyright {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.bottomNav {
+  margin: 0;
+}
+
+.note {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  max-width: 420px;
+  text-align: right;
+}
+
+@media (max-width: 720px) {
+  .bottom {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .note {
+    text-align: left;
+    max-width: none;
+  }
+}

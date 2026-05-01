@@ -1,15 +1,17 @@
 import { execSync } from 'child_process';
-import fs from 'fs';
-import path from 'path';
+import { fileURLToPath } from 'node:url';
 
-console.log('Setting up local D1 and KV for Proxify CF Worker...');
+const repoRoot = fileURLToPath(new URL('..', import.meta.url));
+
+console.log('Applying local D1 migrations (apps/worker)...');
 
 try {
-  // We can add actual wrangler local execution here to migrate D1
-  console.log('Running wrangler d1 migrations...');
-  execSync('pnpm --filter worker run deploy --dry-run', { stdio: 'inherit' }); // Dummy check
-  
-  console.log('Setup complete! Run `pnpm dev` to start the local environment.');
+  execSync('pnpm --filter worker run db:migrate:local', {
+    stdio: 'inherit',
+    cwd: repoRoot,
+  });
+
+  console.log('Setup complete. Run `pnpm dev` to start the worker and admin watch build.');
 } catch (error) {
   console.error('Setup failed:', error);
   process.exit(1);

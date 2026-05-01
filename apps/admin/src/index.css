@@ -1,19 +1,57 @@
+/* Dark — cool zinc/slate base (avoid flat “office grey”) */
 :root {
-  --bg-color: #0f1115;
-  --bg-gradient: radial-gradient(circle at top right, #1a1e28, #0f1115);
-  --text-primary: #f0f0f5;
-  --text-secondary: #a1a5b5;
-  
-  --surface-bg: rgba(255, 255, 255, 0.03);
-  --surface-border: rgba(255, 255, 255, 0.08);
-  --surface-hover: rgba(255, 255, 255, 0.06);
-  --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-  --glass-blur: blur(12px);
+  color-scheme: dark;
+  --bg-color: #09090b;
+  --bg-gradient: radial-gradient(120% 80% at 100% 0%, #18181b 0%, #09090b 55%);
+  --text-primary: #fafafa;
+  --text-secondary: #94a3b8;
+
+  --surface-bg: rgba(148, 163, 184, 0.06);
+  --surface-border: rgba(148, 163, 184, 0.14);
+  --surface-hover: rgba(148, 163, 184, 0.1);
+  --surface-hover-strong: rgba(148, 163, 184, 0.14);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(148, 163, 184, 0.06);
+  --glass-blur: blur(16px);
+
+  --input-bg: rgba(24, 24, 27, 0.85);
+  --placeholder-color: rgba(148, 163, 184, 0.55);
+  --details-pre-bg: rgba(24, 24, 27, 0.95);
+  --divider-subtle: rgba(148, 163, 184, 0.12);
 
   --accent-primary: #6366f1;
   --accent-primary-hover: #4f46e5;
+  --accent-soft: rgba(99, 102, 241, 0.22);
   --accent-danger: #ef4444;
   --accent-danger-hover: #dc2626;
+
+  --sidebar-bg: rgba(9, 9, 11, 0.92);
+  --nav-active-bg: rgba(99, 102, 241, 0.18);
+
+  --btn-secondary-bg: rgba(255, 255, 255, 0.07);
+  --btn-secondary-bg-hover: rgba(255, 255, 255, 0.12);
+  --btn-secondary-border: rgba(255, 255, 255, 0.18);
+  --btn-secondary-border-hover: rgba(255, 255, 255, 0.32);
+  --btn-filled-ring-hover: rgba(255, 255, 255, 0.22);
+
+  --table-header-bg: transparent;
+
+  --modal-backdrop: rgba(0, 0, 0, 0.65);
+  --modal-backdrop-blur: blur(10px);
+  --modal-divider: var(--divider-subtle);
+  --modal-footer-bg: rgba(24, 24, 27, 0.6);
+  --modal-danger-bg: rgba(248, 113, 113, 0.1);
+  --modal-danger-border: rgba(248, 113, 113, 0.22);
+
+  --tab-active-fg: var(--text-primary);
+  --tab-inactive-fg: var(--text-secondary);
+
+  --close-btn-hover-bg: var(--surface-hover-strong);
+  --close-btn-hover-fg: var(--text-primary);
+
+  --code-bg: #18181b;
+  --code-fg: #e4e4e7;
+
+  --btn-primary-fg: #fafafa;
 
   --font-sans: 'Inter', sans-serif;
   --font-display: 'Outfit', sans-serif;
@@ -21,6 +59,64 @@
   --radius-md: 8px;
   --radius-lg: 16px;
   --transition-fast: 0.2s ease;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+    /* One off-white canvas everywhere */
+    --bg-color: #fafafa;
+    --bg-gradient: #fafafa;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+
+    --surface-bg: #fafafa;
+    --surface-border: rgba(0, 0, 0, 0.08);
+    --surface-hover: rgba(0, 0, 0, 0.018);
+    --surface-hover-strong: rgba(0, 0, 0, 0.028);
+    --glass-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
+    --glass-blur: none;
+
+    --input-bg: #fafafa;
+    --placeholder-color: rgba(100, 116, 139, 0.75);
+    --details-pre-bg: #f0f0f0;
+    --divider-subtle: rgba(0, 0, 0, 0.08);
+
+    --table-header-bg: transparent;
+
+    --accent-primary: #4f46e5;
+    --accent-primary-hover: #4338ca;
+    --accent-soft: rgba(79, 70, 229, 0.12);
+    --accent-danger: #dc2626;
+    --accent-danger-hover: #b91c1c;
+
+    --sidebar-bg: #fafafa;
+    --nav-active-bg: rgba(79, 70, 229, 0.1);
+
+    --btn-secondary-bg: #f0f0f0;
+    --btn-secondary-bg-hover: #e5e5e5;
+    --btn-secondary-border: rgba(0, 0, 0, 0.1);
+    --btn-secondary-border-hover: rgba(0, 0, 0, 0.18);
+    --btn-filled-ring-hover: rgba(0, 0, 0, 0.14);
+
+    --modal-backdrop: rgba(15, 23, 42, 0.4);
+    --modal-backdrop-blur: blur(12px);
+    --modal-divider: rgba(148, 163, 184, 0.28);
+    --modal-footer-bg: #fafafa;
+    --modal-danger-bg: rgba(254, 226, 226, 0.85);
+    --modal-danger-border: rgba(252, 165, 165, 0.9);
+
+    --tab-active-fg: var(--text-primary);
+    --tab-inactive-fg: var(--text-secondary);
+
+    --close-btn-hover-bg: var(--surface-hover);
+    --close-btn-hover-fg: var(--text-primary);
+
+    --code-bg: #f0f0f0;
+    --code-fg: #0f172a;
+
+    --btn-primary-fg: #ffffff;
+  }
 }
 
 * {
@@ -49,10 +145,14 @@ a:hover {
   color: var(--accent-primary-hover);
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-display);
   font-weight: 600;
-  color: #ffffff;
 }
 
 button {
@@ -63,7 +163,9 @@ button {
   background: transparent;
 }
 
-input, select, textarea {
+input,
+select,
+textarea {
   font-family: var(--font-sans);
 }
 
@@ -76,8 +178,23 @@ input, select, textarea {
   box-shadow: var(--glass-shadow);
 }
 
+@media (prefers-color-scheme: light) {
+  .glass {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
 .text-gradient {
   background: linear-gradient(135deg, #a5b4fc, #818cf8);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+.recentActivityRow {
+  transition: background var(--transition-fast);
+}
+
+.recentActivityRow:hover {
+  background: var(--surface-hover-strong);
 }

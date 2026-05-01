@@ -14,4 +14,4 @@ A robust, secure Cloudflare Worker-based reverse proxy that routes traffic based
 - **Zero Trust**: Admin panel is protected via Cloudflare Access.
 - **Audit Logs**: Built-in tracking of administrative actions.
 
-See [DEVELOPMENT.md](./DEVELOPMENT.md) for local setup and [DEPLOY.md](./DEPLOY.md) for production deployment.
+See [DEVELOPMENT.md](./DEVELOPMENT.md) for local setup (**Vite HMR** on `http://localhost:5173/` via `pnpm dev:hmr`; landing + admin are one SPA) and [DEPLOY.md](./DEPLOY.md) for production deployment.

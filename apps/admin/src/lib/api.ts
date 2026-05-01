@@ -32,7 +32,13 @@ export const api = {
     getHeaders: (id: string) => fetchApi<any[]>(`/routes/${id}/headers`),
     addHeader: (id: string, data: { header_name: string; header_value: string }) => 
       fetchApi<any>(`/routes/${id}/headers`, { method: 'POST', body: JSON.stringify(data) }),
-    removeHeader: (header_id: string) => fetchApi<{ success: true }>(`/routes/headers/${header_id}`, { method: 'DELETE' }),
+    updateHeader: (header_id: string, data: { header_value: string }) =>
+      fetchApi<{ success: true }>(
+        `/routes/headers/${encodeURIComponent(header_id)}`,
+        { method: 'PUT', body: JSON.stringify(data) }
+      ),
+    removeHeader: (header_id: string) =>
+      fetchApi<{ success: true }>(`/routes/headers/${encodeURIComponent(header_id)}`, { method: 'DELETE' }),
   },
   clients: {
     list: () => fetchApi<Client[]>('/clients'),
@@ -40,21 +46,58 @@ export const api = {
     update: (id: string, data: Partial<Client>) => fetchApi<Client>(`/clients/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   },
   keys: {
-    list: () => fetchApi<Key[]>('/keys'),
+    list: (filters?: { client_id?: string }) => {
+      const q = new URLSearchParams();
+      if (filters?.client_id) q.set('client_id', filters.client_id);
+      const qs = q.toString();
+      return fetchApi<Key[]>(`/keys${qs ? `?${qs}` : ''}`);
+    },
     create: (data: { client_id: string; mode: 'client_signed' | 'server_issued' }) => 
       fetchApi<{ key: Key; privateJwk?: any }>('/keys', { method: 'POST', body: JSON.stringify(data) }),
     revoke: (kid: string) => fetchApi<{ success: true }>(`/keys/${kid}/revoke`, { method: 'POST' }),
-    listTokens: () => fetchApi<IssuedToken[]>('/tokens'),
+    listTokens: (filters?: { client_id?: string; kid?: string }) => {
+      const q = new URLSearchParams();
+      if (filters?.client_id) q.set('client_id', filters.client_id);
+      if (filters?.kid) q.set('kid', filters.kid);
+      const qs = q.toString();
+      return fetchApi<IssuedToken[]>(`/tokens${qs ? `?${qs}` : ''}`);
+    },
     mintToken: (kid: string, data: { client_id: string; label?: string; expires_in_days?: number }) => 
       fetchApi<{ token: string; issued: IssuedToken }>(`/keys/${kid}/tokens`, { method: 'POST', body: JSON.stringify(data) }),
     revokeToken: (jti: string) => fetchApi<{ success: true }>(`/tokens/${jti}/revoke`, { method: 'POST' })
   },
   grants: {
-    list: () => fetchApi<ClientRouteGrant[]>('/grants'),
+    list: (filters?: { client_id?: string; route_id?: string }) => {
+      const q = new URLSearchParams();
+      if (filters?.client_id) q.set('client_id', filters.client_id);
+      if (filters?.route_id) q.set('route_id', filters.route_id);
+      const qs = q.toString();
+      return fetchApi<ClientRouteGrant[]>(`/grants${qs ? `?${qs}` : ''}`);
+    },
     create: (data: { client_id: string; route_id: string }) => fetchApi<ClientRouteGrant>('/grants', { method: 'POST', body: JSON.stringify(data) }),
     revoke: (client_id: string, route_id: string) => fetchApi<{ success: true }>(`/grants/${client_id}/${route_id}`, { method: 'DELETE' }),
   },
   audit: {
-    list: () => fetchApi<AuditLog[]>('/audit')
-  }
+    list: (filters?: {
+      client_id?: string;
+      action?: string;
+      target?: string;
+      kid?: string;
+      route_id?: string;
+      limit?: number;
+      offset?: number;
+    }) => {
+      const q = new URLSearchParams();
+      if (filters?.client_id) q.set('client_id', filters.client_id);
+      if (filters?.action) q.set('action', filters.action);
+      if (filters?.target) q.set('target', filters.target);
+      if (filters?.kid) q.set('kid', filters.kid);
+      if (filters?.route_id) q.set('route_id', filters.route_id);
+      if (filters?.limit != null) q.set('limit', String(filters.limit));
+      if (filters?.offset != null) q.set('offset', String(filters.offset));
+      const qs = q.toString();
+      return fetchApi<AuditLog[]>(`/audit${qs ? `?${qs}` : ''}`);
+    },
+    actions: () => fetchApi<string[]>('/audit/actions'),
+  },
 };

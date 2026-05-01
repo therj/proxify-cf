@@ -1,0 +1,229 @@
+.article {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: clamp(32px, 6vw, 56px) clamp(24px, 5vw, 48px) 80px;
+}
+
+.header {
+  margin-bottom: 28px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--divider-subtle);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+
+.intro {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+
+.toc {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  padding: 16px 0 28px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--divider-subtle);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: linear-gradient(to bottom, var(--bg-color) 70%, transparent);
+}
+
+.tocLabel {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-right: 4px;
+}
+
+.tocLink {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--accent-primary);
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--surface-border);
+  background: var(--surface-bg);
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.tocLink:hover {
+  background: var(--surface-hover);
+  border-color: var(--surface-border);
+}
+
+.docSection {
+  padding-top: 8px;
+}
+
+.sectionRule {
+  border: none;
+  border-top: 1px solid var(--divider-subtle);
+  margin: 40px 0;
+}
+
+/* --- Markdown body (GFM + slugged headings) --- */
+.markdownBody {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  overflow-x: auto;
+}
+
+.markdownBody :first-child {
+  margin-top: 0;
+}
+
+.markdownBody h1,
+.markdownBody h2,
+.markdownBody h3,
+.markdownBody h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  scroll-margin-top: 96px;
+}
+
+.markdownBody h1 {
+  font-size: clamp(1.5rem, 3vw, 1.85rem);
+  margin: 0 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--divider-subtle);
+}
+
+.markdownBody h2 {
+  font-size: 1.35rem;
+  margin: 36px 0 14px;
+}
+
+.markdownBody h3 {
+  font-size: 1.15rem;
+  margin: 28px 0 10px;
+}
+
+.markdownBody h4 {
+  font-size: 1.05rem;
+  margin: 22px 0 8px;
+}
+
+.markdownBody p {
+  margin: 0 0 14px;
+}
+
+.markdownBody ul,
+.markdownBody ol {
+  margin: 0 0 14px;
+  padding-left: 1.35rem;
+}
+
+.markdownBody li {
+  margin-bottom: 6px;
+}
+
+.markdownBody li::marker {
+  color: var(--text-secondary);
+}
+
+.markdownBody blockquote {
+  margin: 14px 0;
+  padding: 10px 16px;
+  border-left: 3px solid var(--accent-primary);
+  background: var(--surface-bg);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  color: var(--text-secondary);
+}
+
+.markdownBody hr {
+  border: none;
+  border-top: 1px solid var(--divider-subtle);
+  margin: 28px 0;
+}
+
+.markdownBody a {
+  color: var(--accent-primary);
+  font-weight: 500;
+}
+
+.markdownBody a:hover {
+  color: var(--accent-primary-hover);
+}
+
+.markdownBody code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.88em;
+  padding: 2px 7px;
+  border-radius: var(--radius-md);
+  background: var(--code-bg);
+  color: var(--code-fg);
+}
+
+.markdownBody pre {
+  margin: 14px 0;
+  padding: 16px 18px;
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--surface-border);
+  background: var(--details-pre-bg);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.markdownBody pre code {
+  padding: 0;
+  background: none;
+  color: inherit;
+  font-size: inherit;
+}
+
+.markdownBody table {
+  width: 100%;
+  min-width: min(100%, 720px);
+  border-collapse: collapse;
+  font-size: 14px;
+  margin: 16px 0 20px;
+}
+
+.markdownBody th,
+.markdownBody td {
+  border: 1px solid var(--surface-border);
+  padding: 10px 14px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.markdownBody th {
+  background: var(--surface-bg);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.markdownBody tbody tr:nth-child(even) {
+  background: var(--surface-hover);
+}
+
+@media (prefers-color-scheme: light) {
+  .markdownBody tbody tr:nth-child(even) {
+    background: rgba(0, 0, 0, 0.02);
+  }
+}
+
+.markdownBody strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}

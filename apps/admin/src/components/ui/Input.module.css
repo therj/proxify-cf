@@ -14,8 +14,8 @@
 .input {
   width: 100%;
   padding: 10px 14px;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--input-bg);
+  border: 1px solid var(--surface-border);
   border-radius: var(--radius-md);
   color: var(--text-primary);
   font-size: 14px;
@@ -28,8 +28,21 @@
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
 }
 
+.input:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+  border-color: var(--divider-subtle);
+}
+
+.input:disabled:focus {
+  border-color: var(--divider-subtle);
+  box-shadow: none;
+}
+
 .input::placeholder {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--placeholder-color);
 }
 
 .hasError {

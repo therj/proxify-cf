@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Table, Th, Td } from '../components/ui/Table';
 import { Modal } from '../components/ui/Modal';
@@ -6,8 +7,8 @@ import { Input } from '../components/ui/Input';
 import { Plus } from 'lucide-react';
 import { api } from '../lib/api';
 import { Client } from '@proxify-cf/shared';
-
 export const Clients = () => {
+  const navigate = useNavigate();
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setModalOpen] = useState(false);
@@ -16,7 +17,6 @@ export const Clients = () => {
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', email: '', description: '' });
-
   const loadClients = async () => {
     setIsLoading(true);
     try {
@@ -90,17 +90,42 @@ export const Clients = () => {
           ) : clients.length === 0 ? (
             <tr><Td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No clients found.</Td></tr>
           ) : (
-            clients.map((client) => (
-              <tr key={client.id}>
-                <Td style={{ fontFamily: 'monospace' }}>{client.id}</Td>
-                <Td>{client.name}</Td>
-                <Td>{client.email}</Td>
-                <Td>{new Date(client.created_at).toLocaleDateString()}</Td>
-                <Td>
-                  <Button variant="secondary" size="sm" onClick={() => handleOpenEdit(client)}>Edit</Button>
-                </Td>
-              </tr>
-            ))
+            clients.map((client) => {
+              const openDetail = () => navigate(`/admin/clients/${client.id}`);
+              return (
+                <tr
+                  key={client.id}
+                  tabIndex={0}
+                  style={{ cursor: 'pointer' }}
+                  aria-label={`Open client ${client.name}`}
+                  onClick={openDetail}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      openDetail();
+                    }
+                  }}
+                >
+                  <Td style={{ fontFamily: 'monospace' }}>{client.id}</Td>
+                  <Td style={{ fontWeight: 500 }}>{client.name}</Td>
+                  <Td>{client.email}</Td>
+                  <Td>{new Date(client.created_at).toLocaleDateString()}</Td>
+                  <Td>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenEdit(client);
+                      }}
+                    >
+                      Edit
+                    </Button>
+                  </Td>
+                </tr>
+              );
+            })
           )}
         </tbody>
       </Table>

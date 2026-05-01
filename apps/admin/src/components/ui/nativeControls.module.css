@@ -1,0 +1,82 @@
+/** Native selects / code fields — theme tokens (avoid inline dark-only rgba). */
+.select {
+  width: 100%;
+  padding: 10px 14px;
+  box-sizing: border-box;
+  background: var(--input-bg);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: border-color var(--transition-fast);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
+.textareaCode {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  padding: 12px;
+  background: var(--code-bg);
+  color: var(--code-fg);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  resize: vertical;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.textareaCode:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
+.tabBar {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid var(--modal-divider);
+}
+
+.tab {
+  cursor: pointer;
+  padding-bottom: 12px;
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+  background: none;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.tabActive {
+  color: var(--tab-active-fg);
+  border-bottom-color: var(--accent-primary);
+}
+
+.tabInactive {
+  color: var(--tab-inactive-fg);
+}
+
+.tabInactive:hover {
+  color: var(--text-primary);
+  border-bottom-color: var(--divider-subtle);
+}
+
+.rowChip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface-hover);
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+}
+
+.sectionDivider {
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--modal-divider);
+}

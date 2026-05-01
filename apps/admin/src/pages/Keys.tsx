@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Table, Th, Td } from '../components/ui/Table';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
@@ -6,8 +7,13 @@ import { Input } from '../components/ui/Input';
 import { Plus } from 'lucide-react';
 import { api } from '../lib/api';
 import { Key, Client } from '@proxify-cf/shared';
-
+import nc from '../components/ui/nativeControls.module.css';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 export const Keys = () => {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filterClientId = searchParams.get('client_id') || undefined;
+
   const [keys, setKeys] = useState<Key[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -24,6 +30,8 @@ export const Keys = () => {
   const [validityValue, setValidityValue] = useState(30);
   const [validityUnit, setValidityUnit] = useState<'Days' | 'Months' | 'Years'>('Days');
 
+  const [revokeKid, setRevokeKid] = useState<string | null>(null);
+
   // Form Data
   const [formData, setFormData] = useState({ client_id: '', mode: 'client_signed' as 'client_signed' | 'server_issued' });
 
@@ -31,13 +39,13 @@ export const Keys = () => {
     setIsLoading(true);
     try {
       const [keysData, clientsData] = await Promise.all([
-        api.keys.list(),
-        api.clients.list()
+        api.keys.list(filterClientId ? { client_id: filterClientId } : undefined),
+        api.clients.list(),
       ]);
       setKeys(keysData);
       setClients(clientsData);
       if (clientsData.length > 0 && !formData.client_id) {
-        setFormData(prev => ({ ...prev, client_id: clientsData[0].id }));
+        setFormData((prev) => ({ ...prev, client_id: clientsData[0].id }));
       }
     } catch (e) {
       console.error(e);
@@ -48,7 +56,7 @@ export const Keys = () => {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [filterClientId]);
 
   const handleGenerate = async () => {
     setError(null);
@@ -69,10 +77,11 @@ export const Keys = () => {
     }
   };
 
-  const handleRevoke = async (kid: string) => {
-    if (!confirm('Are you sure you want to revoke this key?')) return;
+  const confirmRevokeKey = async () => {
+    if (!revokeKid) return;
     try {
-      await api.keys.revoke(kid);
+      await api.keys.revoke(revokeKid);
+      setRevokeKid(null);
       await loadData();
     } catch (e) {
       console.error(e);
@@ -111,11 +120,49 @@ export const Keys = () => {
     setMintOpen(true);
   };
 
+  const clearFilter = () => {
+    searchParams.delete('client_id');
+    setSearchParams(searchParams);
+  };
+
+  const filterClientName = filterClientId ? clients.find((c) => c.id === filterClientId)?.name : null;
+
   return (
     <div>
+      {filterClientId ? (
+        <div
+          style={{
+            marginBottom: 16,
+            padding: '12px 16px',
+            borderRadius: 8,
+            border: '1px solid var(--surface-border)',
+            background: 'var(--surface-bg)',
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+          }}
+        >
+          <span style={{ fontSize: 14 }}>
+            Showing keys for client{' '}
+            <Link to={`/admin/clients/${filterClientId}`} style={{ fontWeight: 600, color: 'var(--accent-primary)' }}>
+              {filterClientName ?? filterClientId.slice(0, 8) + '…'}
+            </Link>
+          </span>
+          <Button variant="secondary" size="sm" type="button" onClick={clearFilter}>
+            Clear filter
+          </Button>
+        </div>
+      ) : null}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <h2>Keys & Tokens</h2>
-        <Button onClick={() => setGenerateOpen(true)}>
+        <Button
+          onClick={() => {
+            if (filterClientId) setFormData((prev) => ({ ...prev, client_id: filterClientId }));
+            setGenerateOpen(true);
+          }}
+        >
           <Plus size={16} /> Generate Key
         </Button>
       </div>
@@ -137,35 +184,54 @@ export const Keys = () => {
           ) : keys.length === 0 ? (
             <tr><Td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No keys found.</Td></tr>
           ) : (
-            keys.map((k) => (
-              <tr key={k.kid} style={{ opacity: k.revoked_at ? 0.5 : 1 }}>
-                <Td style={{ fontFamily: 'monospace' }}>{k.kid}</Td>
-                <Td>{clients.find(c => c.id === k.client_id)?.name || k.client_id}</Td>
-                <Td>
-                  <span style={{ 
-                    background: 'rgba(99, 102, 241, 0.2)', 
-                    color: 'var(--accent-primary)',
-                    padding: '4px 8px',
-                    borderRadius: 4,
-                    fontSize: 12
-                  }}>
-                    {k.mode}
-                  </span>
-                </Td>
-                <Td>{k.alg}</Td>
-                <Td>{k.revoked_at ? 'Revoked' : 'Active'}</Td>
-                <Td>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    {k.mode === 'server_issued' && !k.revoked_at && (
-                      <Button variant="secondary" size="sm" onClick={() => openMintModal(k.kid)}>Mint JWT</Button>
-                    )}
-                    {!k.revoked_at && (
-                      <Button variant="danger" size="sm" onClick={() => handleRevoke(k.kid)}>Revoke</Button>
-                    )}
-                  </div>
-                </Td>
-              </tr>
-            ))
+            keys.map((k) => {
+              const openClient = () => navigate(`/admin/clients/${k.client_id}`);
+              return (
+                <tr
+                  key={k.kid}
+                  tabIndex={0}
+                  style={{ cursor: 'pointer', opacity: k.revoked_at ? 0.5 : 1 }}
+                  aria-label={`Open client for key ${k.kid.slice(0, 8)}…`}
+                  onClick={openClient}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      openClient();
+                    }
+                  }}
+                >
+                  <Td style={{ fontFamily: 'monospace' }}>{k.kid}</Td>
+                  <Td>{clients.find((c) => c.id === k.client_id)?.name || k.client_id}</Td>
+                  <Td>
+                    <span style={{
+                      background: 'var(--accent-soft)',
+                      color: 'var(--accent-primary)',
+                      padding: '4px 8px',
+                      borderRadius: 4,
+                      fontSize: 12,
+                    }}>
+                      {k.mode}
+                    </span>
+                  </Td>
+                  <Td>{k.alg}</Td>
+                  <Td>{k.revoked_at ? 'Revoked' : 'Active'}</Td>
+                  <Td>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }} onClick={(e) => e.stopPropagation()}>
+                      {k.mode === 'server_issued' && !k.revoked_at && (
+                        <Button variant="secondary" size="sm" type="button" onClick={() => openMintModal(k.kid)}>
+                          Mint JWT
+                        </Button>
+                      )}
+                      {!k.revoked_at && (
+                        <Button variant="danger" size="sm" type="button" onClick={() => setRevokeKid(k.kid)}>
+                          Revoke
+                        </Button>
+                      )}
+                    </div>
+                  </Td>
+                </tr>
+              );
+            })
           )}
         </tbody>
       </Table>
@@ -174,10 +240,11 @@ export const Keys = () => {
         {generatedKey ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <p style={{ color: 'var(--accent-danger)' }}>Warning: This is the ONLY time the private key will be shown. Please copy it now.</p>
-            <textarea 
-              readOnly 
-              value={JSON.stringify(generatedKey, null, 2)} 
-              style={{ width: '100%', height: 200, fontFamily: 'monospace', padding: 12, background: '#000', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}
+            <textarea
+              readOnly
+              className={nc.textareaCode}
+              style={{ height: 200 }}
+              value={JSON.stringify(generatedKey, null, 2)}
             />
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
               <Button onClick={() => { setGenerateOpen(false); setGeneratedKey(null); }}>Done</Button>
@@ -188,20 +255,20 @@ export const Keys = () => {
             {error && <div style={{ color: 'var(--accent-danger)', fontSize: 14 }}>{error}</div>}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <label style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Client</label>
-              <select 
-                style={{ padding: '10px 14px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff' }}
+              <select
+                className={nc.select}
                 value={formData.client_id}
-                onChange={e => setFormData({ ...formData, client_id: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, client_id: e.target.value })}
               >
                 {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <label style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Mode</label>
-              <select 
-                style={{ padding: '10px 14px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff' }}
+              <select
+                className={nc.select}
                 value={formData.mode}
-                onChange={e => setFormData({ ...formData, mode: e.target.value as any })}
+                onChange={(e) => setFormData({ ...formData, mode: e.target.value as 'client_signed' | 'server_issued' })}
               >
                 <option value="client_signed">Client Signed (Download Private JWK)</option>
                 <option value="server_issued">Server Issued (Mint JWTs Here)</option>
@@ -219,11 +286,7 @@ export const Keys = () => {
         {mintedToken ? (
            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <p>Your token has been minted:</p>
-            <textarea 
-              readOnly 
-              value={mintedToken} 
-              style={{ width: '100%', height: 100, fontFamily: 'monospace', padding: 12, background: '#000', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}
-            />
+            <textarea readOnly className={nc.textareaCode} style={{ height: 100 }} value={mintedToken} />
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
               <Button onClick={() => setMintOpen(false)}>Done</Button>
             </div>
@@ -243,10 +306,11 @@ export const Keys = () => {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
                 <label style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Unit</label>
-                <select 
-                  style={{ padding: '10px 14px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', height: '42px' }}
+                <select
+                  className={nc.select}
+                  style={{ minHeight: 42 }}
                   value={validityUnit}
-                  onChange={e => setValidityUnit(e.target.value as any)}
+                  onChange={(e) => setValidityUnit(e.target.value as 'Days' | 'Months' | 'Years')}
                 >
                   <option value="Days">Days</option>
                   <option value="Months">Months</option>
@@ -261,6 +325,16 @@ export const Keys = () => {
           </div>
         )}
       </Modal>
+
+      <ConfirmDialog
+        isOpen={revokeKid !== null}
+        title="Revoke signing key?"
+        message="Existing JWTs signed with this key may fail verification. This cannot be undone."
+        confirmLabel="Revoke key"
+        variant="danger"
+        onCancel={() => setRevokeKid(null)}
+        onConfirm={confirmRevokeKey}
+      />
     </div>
   );
 };

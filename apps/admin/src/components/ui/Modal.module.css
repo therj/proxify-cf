@@ -1,8 +1,9 @@
 .backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
+  background: var(--modal-backdrop);
+  backdrop-filter: var(--modal-backdrop-blur);
+  -webkit-backdrop-filter: var(--modal-backdrop-blur);
   z-index: 100;
 }
 
@@ -32,7 +33,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--modal-divider);
 }
 
 .title {
@@ -44,18 +45,37 @@
   color: var(--text-secondary);
   padding: 4px;
   border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  border: 1px solid transparent;
+  transition: background var(--transition-fast), color var(--transition-fast),
+    border-color var(--transition-fast);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .closeBtn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
+  background: var(--close-btn-hover-bg);
+  color: var(--close-btn-hover-fg);
+  border-color: var(--btn-secondary-border);
 }
 
 .content {
   padding: 24px;
   overflow-y: auto;
+}
+
+.errorBanner {
+  padding: 12px 24px;
+  background: var(--modal-danger-bg);
+  color: var(--accent-danger);
+  font-size: 14px;
+  border-bottom: 1px solid var(--modal-danger-border);
+}
+
+.footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--modal-divider);
+  background: var(--modal-footer-bg);
+  border-bottom-left-radius: var(--radius-lg);
+  border-bottom-right-radius: var(--radius-lg);
 }

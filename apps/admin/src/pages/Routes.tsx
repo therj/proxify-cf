@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Table, Th, Td } from '../components/ui/Table';
 import { Modal } from '../components/ui/Modal';
@@ -6,8 +7,11 @@ import { Input } from '../components/ui/Input';
 import { Plus } from 'lucide-react';
 import { api } from '../lib/api';
 import { Route } from '@proxify-cf/shared';
+import nc from '../components/ui/nativeControls.module.css';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 
 export const Routes = () => {
+  const navigate = useNavigate();
   const [routes, setRoutes] = useState<Route[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setModalOpen] = useState(false);
@@ -22,9 +26,12 @@ export const Routes = () => {
   const [formHeaders, setFormHeaders] = useState<{ id?: string; header_name: string; header_value: string }[]>([]);
   const [newHeaderName, setNewHeaderName] = useState('');
   const [newHeaderValue, setNewHeaderValue] = useState('');
+  /** Index in formHeaders being edited in the draft row; null = adding new. */
+  const [editingHeaderIndex, setEditingHeaderIndex] = useState<number | null>(null);
 
   // UI State
   const [activeTab, setActiveTab] = useState<'details' | 'headers'>('details');
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const loadRoutes = async () => {
     setIsLoading(true);
@@ -42,10 +49,22 @@ export const Routes = () => {
     loadRoutes();
   }, []);
 
+  const resetHeaderDraft = () => {
+    setEditingHeaderIndex(null);
+    setNewHeaderName('');
+    setNewHeaderValue('');
+  };
+
+  const closeRouteModal = () => {
+    setModalOpen(false);
+    resetHeaderDraft();
+  };
+
   const handleOpenCreate = () => {
     setEditingId(null);
     setFormData({ host: '', path_prefix: '/', upstream_url: '' });
     setFormHeaders([]);
+    resetHeaderDraft();
     setError(null);
     setActiveTab('details');
     setModalOpen(true);
@@ -55,6 +74,7 @@ export const Routes = () => {
     setEditingId(r.id);
     setFormData({ host: r.host, path_prefix: r.path_prefix, upstream_url: r.upstream_url });
     setFormHeaders([]); // Clear previous
+    resetHeaderDraft();
     setError(null);
     setActiveTab('details');
     setModalOpen(true);
@@ -92,15 +112,19 @@ export const Routes = () => {
           }
         }
         
-        // Add new headers
         for (const h of formHeaders) {
-          if (!h.id) {
+          if (h.id) {
+            const ex = existingHdrs.find((e: { id: string }) => e.id === h.id);
+            if (ex && ex.header_value !== h.header_value) {
+              await api.routes.updateHeader(h.id, { header_value: h.header_value });
+            }
+          } else {
             await api.routes.addHeader(routeId, { header_name: h.header_name, header_value: h.header_value });
           }
         }
       }
 
-      setModalOpen(false);
+      closeRouteModal();
       await loadRoutes();
     } catch (e: any) {
       setError(e.message);
@@ -109,31 +133,48 @@ export const Routes = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this route?')) return;
+  const confirmDelete = async () => {
+    if (!deleteConfirmId) return;
     try {
-      await api.routes.remove(id);
+      await api.routes.remove(deleteConfirmId);
+      setDeleteConfirmId(null);
       await loadRoutes();
     } catch (e) {
       console.error(e);
     }
   };
 
-  const handleAddLocalHeader = () => {
+  const handleSaveHeaderDraft = () => {
     if (!newHeaderName || !newHeaderValue) return;
+    if (editingHeaderIndex !== null) {
+      setFormHeaders((prev) => {
+        const next = [...prev];
+        const cur = next[editingHeaderIndex];
+        if (!cur) return prev;
+        next[editingHeaderIndex] = { ...cur, header_value: newHeaderValue };
+        return next;
+      });
+      resetHeaderDraft();
+      return;
+    }
     setFormHeaders([...formHeaders, { header_name: newHeaderName, header_value: newHeaderValue }]);
     setNewHeaderName('');
     setNewHeaderValue('');
   };
 
-  const handleEditLocalHeader = (idx: number) => {
+  const handleStartEditHeader = (idx: number) => {
     const h = formHeaders[idx];
+    setEditingHeaderIndex(idx);
     setNewHeaderName(h.header_name);
     setNewHeaderValue(h.header_value);
-    setFormHeaders(formHeaders.filter((_, i) => i !== idx));
   };
 
   const handleRemoveLocalHeader = (idx: number) => {
+    if (editingHeaderIndex === idx) {
+      resetHeaderDraft();
+    } else if (editingHeaderIndex !== null && editingHeaderIndex > idx) {
+      setEditingHeaderIndex(editingHeaderIndex - 1);
+    }
     setFormHeaders(formHeaders.filter((_, i) => i !== idx));
   };
 
@@ -161,50 +202,71 @@ export const Routes = () => {
           ) : routes.length === 0 ? (
             <tr><Td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No routes found.</Td></tr>
           ) : (
-            routes.map((route) => (
-              <tr key={route.id}>
-                <Td style={{ fontWeight: 500 }}>{route.host}</Td>
-                <Td style={{ fontFamily: 'monospace', color: 'var(--accent-primary)' }}>{route.path_prefix}</Td>
-                <Td style={{ color: 'var(--text-secondary)' }}>{route.upstream_url}</Td>
-                <Td>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <Button variant="secondary" size="sm" onClick={() => handleOpenEdit(route)}>Edit</Button>
-                    <Button variant="danger" size="sm" onClick={() => handleDelete(route.id)}>Delete</Button>
-                  </div>
-                </Td>
-              </tr>
-            ))
+            routes.map((route) => {
+              const openDetail = () => navigate(`/admin/routes/${route.id}`);
+              return (
+                <tr
+                  key={route.id}
+                  tabIndex={0}
+                  style={{ cursor: 'pointer' }}
+                  aria-label={`Open route ${route.host}`}
+                  onClick={openDetail}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      openDetail();
+                    }
+                  }}
+                >
+                  <Td style={{ fontWeight: 500 }}>{route.host}</Td>
+                  <Td style={{ fontFamily: 'monospace', color: 'var(--accent-primary)' }}>{route.path_prefix}</Td>
+                  <Td style={{ color: 'var(--text-secondary)' }}>{route.upstream_url}</Td>
+                  <Td>
+                    <div style={{ display: 'flex', gap: 8 }} onClick={(e) => e.stopPropagation()}>
+                      <Button variant="secondary" size="sm" type="button" onClick={() => handleOpenEdit(route)}>
+                        Edit
+                      </Button>
+                      <Button variant="danger" size="sm" type="button" onClick={() => setDeleteConfirmId(route.id)}>
+                        Delete
+                      </Button>
+                    </div>
+                  </Td>
+                </tr>
+              );
+            })
           )}
         </tbody>
       </Table>
 
       <Modal 
         isOpen={isModalOpen} 
-        onClose={() => setModalOpen(false)} 
+        onClose={closeRouteModal} 
         title={editingId ? "Edit Route" : "Create New Route"}
         width={700}
         error={error}
         footer={
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
-            <Button variant="secondary" onClick={() => setModalOpen(false)} disabled={isSaving}>Cancel</Button>
+            <Button variant="secondary" onClick={closeRouteModal} disabled={isSaving}>Cancel</Button>
             <Button onClick={handleSave} isLoading={isSaving}>{editingId ? 'Save Route' : 'Create Route'}</Button>
           </div>
         }
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minHeight: 350 }}>
-          <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-            <div 
-              onClick={() => setActiveTab('details')} 
-              style={{ cursor: 'pointer', paddingBottom: 12, fontWeight: 500, color: activeTab === 'details' ? '#fff' : 'var(--text-secondary)', borderBottom: activeTab === 'details' ? '2px solid var(--accent-primary)' : '2px solid transparent', transition: 'all 0.2s' }}
+          <div className={nc.tabBar}>
+            <button
+              type="button"
+              className={`${nc.tab} ${activeTab === 'details' ? nc.tabActive : nc.tabInactive}`}
+              onClick={() => setActiveTab('details')}
             >
               Details
-            </div>
-            <div 
-              onClick={() => setActiveTab('headers')} 
-              style={{ cursor: 'pointer', paddingBottom: 12, fontWeight: 500, color: activeTab === 'headers' ? '#fff' : 'var(--text-secondary)', borderBottom: activeTab === 'headers' ? '2px solid var(--accent-primary)' : '2px solid transparent', transition: 'all 0.2s' }}
+            </button>
+            <button
+              type="button"
+              className={`${nc.tab} ${activeTab === 'headers' ? nc.tabActive : nc.tabInactive}`}
+              onClick={() => setActiveTab('headers')}
             >
               Custom Headers
-            </div>
+            </button>
           </div>
 
           {activeTab === 'details' && (
@@ -237,52 +299,84 @@ export const Routes = () => {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {formHeaders.map((h, i) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '8px 12px', borderRadius: 8 }}>
+                    <div key={h.id ?? `local-${i}-${h.header_name}`} className={nc.rowChip}>
                       <div>
                         <span style={{ fontWeight: 500, fontSize: 14 }}>{h.header_name}</span>: <span style={{ fontFamily: 'monospace', color: 'var(--text-secondary)', fontSize: 14 }}>{h.header_value}</span>
                       </div>
                       <div style={{ display: 'flex', gap: 8 }}>
-                        <Button variant="secondary" size="sm" onClick={() => handleEditLocalHeader(i)}>Edit</Button>
-                        <Button variant="danger" size="sm" onClick={() => handleRemoveLocalHeader(i)}>Remove</Button>
+                        <Button variant="secondary" size="sm" type="button" onClick={() => handleStartEditHeader(i)}>
+                          Edit
+                        </Button>
+                        <Button variant="danger" size="sm" type="button" onClick={() => handleRemoveLocalHeader(i)}>Remove</Button>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
 
-              <div style={{ marginTop: 8, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                <h4 style={{ margin: '0 0 12px 0' }}>Add / Edit Header</h4>
-                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: 14, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Name</label>
-                    <input 
-                      type="text"
-                      list="cf-headers"
+              <div className={nc.sectionDivider}>
+                <h4 style={{ margin: '0 0 12px 0' }}>
+                  {editingHeaderIndex !== null ? 'Edit header value' : 'Add header'}
+                </h4>
+                <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                  {editingHeaderIndex !== null
+                    ? 'Name is fixed for an existing header. Change the value and click Save, or Cancel to discard changes.'
+                    : 'Add a new header name and value, then click Add.'}
+                </p>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                  <div style={{ flex: '1 1 200px' }}>
+                    <Input
+                      label="Name"
+                      list={editingHeaderIndex === null ? 'cf-headers' : undefined}
                       placeholder="e.g. CF-Access-Client-Id"
                       value={newHeaderName}
-                      onChange={e => setNewHeaderName(e.target.value)}
-                      style={{ width: '100%', padding: '10px 14px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', boxSizing: 'border-box' }}
+                      onChange={(e) => setNewHeaderName(e.target.value)}
+                      disabled={editingHeaderIndex !== null}
                     />
                     <datalist id="cf-headers">
                       <option value="CF-Access-Client-Id" />
                       <option value="CF-Access-Client-Secret" />
                     </datalist>
                   </div>
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: '1 1 200px' }}>
                     <Input 
                       label="Value" 
                       placeholder="Header value..." 
                       value={newHeaderValue}
-                      onChange={e => setNewHeaderValue(e.target.value)}
+                      onChange={(e) => setNewHeaderValue(e.target.value)}
                     />
                   </div>
-                  <Button variant="secondary" onClick={handleAddLocalHeader} disabled={!newHeaderName || !newHeaderValue}>Add</Button>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                    {editingHeaderIndex !== null ? (
+                      <Button variant="secondary" type="button" onClick={resetHeaderDraft}>
+                        Cancel
+                      </Button>
+                    ) : null}
+                    <Button
+                      variant="secondary"
+                      type="button"
+                      onClick={handleSaveHeaderDraft}
+                      disabled={!newHeaderName || !newHeaderValue}
+                    >
+                      {editingHeaderIndex !== null ? 'Save' : 'Add'}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
           )}
         </div>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={deleteConfirmId !== null}
+        title="Delete route?"
+        message="This removes the route and its configuration. Clients may lose access until you configure another route."
+        confirmLabel="Delete route"
+        variant="danger"
+        onCancel={() => setDeleteConfirmId(null)}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 };

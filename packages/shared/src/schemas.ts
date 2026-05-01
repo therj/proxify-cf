@@ -66,5 +66,8 @@ export const AuditLogSchema = z.object({
   actor: z.string(),
   action: z.string(),
   target: z.string(),
-  meta: z.string() // JSON text
+  meta: z.string().nullable().optional(),
+  client_id: z.string().nullable().optional(),
+  kid: z.string().nullable().optional(),
+  route_id: z.string().nullable().optional(),
 });

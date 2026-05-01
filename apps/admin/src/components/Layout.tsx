@@ -4,12 +4,12 @@ import { Shield, LayoutDashboard, Users, Route, KeyRound, Link2, Activity } from
 import styles from './Layout.module.css';
 
 const navItems = [
-  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/clients', label: 'Clients', icon: Users },
-  { path: '/routes', label: 'Routes', icon: Route },
-  { path: '/keys', label: 'Keys & Tokens', icon: KeyRound },
-  { path: '/grants', label: 'Grants', icon: Link2 },
-  { path: '/audit', label: 'Audit Log', icon: Activity },
+  { path: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { path: '/admin/clients', label: 'Clients', icon: Users },
+  { path: '/admin/routes', label: 'Routes', icon: Route },
+  { path: '/admin/keys', label: 'Keys & Tokens', icon: KeyRound },
+  { path: '/admin/grants', label: 'Grants', icon: Link2 },
+  { path: '/admin/audit', label: 'Audit Log', icon: Activity },
 ];
 
 export const Layout: React.FC = () => {
@@ -25,6 +25,7 @@ export const Layout: React.FC = () => {
             <NavLink
               key={item.path}
               to={item.path}
+              end={item.end}
               className={({ isActive }) => 
                 isActive ? `${styles.navItem} ${styles.active}` : styles.navItem
               }

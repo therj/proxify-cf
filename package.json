@@ -4,12 +4,18 @@
   "scripts": {
     "setup": "tsx scripts/setup.ts",
     "dev": "pnpm --parallel --filter worker --filter admin dev",
+    "dev:hmr": "concurrently -k -n worker,admin -c blue,green \"pnpm --filter worker dev\" \"pnpm --filter admin dev:hmr\"",
     "gen:token": "tsx scripts/gen-token.ts",
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "build": "pnpm --filter admin build",
+    "predeploy": "pnpm typecheck && pnpm run build",
+    "deploy": "pnpm --filter worker run deploy",
+    "db:pull:remote": "pnpm --filter worker run db:pull:remote"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "tsx": "^4.21.0",
     "typescript": "^6.0.3"
   }
