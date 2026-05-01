@@ -27,13 +27,34 @@ app.route('/health', healthRoutes);
 // Admin SPA + static files (Vite base `/admin/` → dist/admin/...)
 // Fetching `GET /admin` via ASSETS alone often returns 307 → `/admin/`, which can loop with the SPA;
 // serve the shell directly as `/admin/index.html` instead.
-const serveAdminAssets = (c: Context<{ Bindings: Env }>) => {
+// Deep links (`/admin/clients`, …) have no matching file — try ASSETS first, then fall back to index.html.
+// JSON API lives under `/admin/api/v1` (mounted above); never serve SPA for `/admin/api/*`.
+const ADMIN_INDEX_PATH = '/admin/index.html';
+
+const serveAdminAssets = async (c: Context<{ Bindings: Env }>) => {
   const url = new URL(c.req.url);
-  if (url.pathname === '/admin') {
-    url.pathname = '/admin/index.html';
+  const path = url.pathname;
+
+  if (path.startsWith('/admin/api')) {
+    return c.notFound();
+  }
+
+  if (path === '/admin' || path === '/admin/') {
+    url.pathname = ADMIN_INDEX_PATH;
     return c.env.ASSETS.fetch(new Request(url, c.req));
   }
-  return c.env.ASSETS.fetch(c.req.raw);
+
+  if (path.startsWith('/admin/assets/') || path === ADMIN_INDEX_PATH) {
+    return c.env.ASSETS.fetch(c.req.raw);
+  }
+
+  const direct = await c.env.ASSETS.fetch(c.req.raw);
+  if (direct.status !== 404) {
+    return direct;
+  }
+
+  url.pathname = ADMIN_INDEX_PATH;
+  return c.env.ASSETS.fetch(new Request(url, c.req));
 };
 
 app.get('/admin', serveAdminAssets);
