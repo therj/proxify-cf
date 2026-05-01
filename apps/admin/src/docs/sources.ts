@@ -14,3 +14,8 @@ export function normalizeDocLinks(md: string): string {
     .replace(/\]\(\.\/DEPLOY\.md\)/gi, '](#deployment-guide)')
     .replace(/\]\(\.\/README\.md\)/gi, '](#proxify-cf)');
 }
+
+/** Single markdown document so `rehype-slug` assigns globally unique heading ids (fixes TOC hash targets). */
+export const fullDocsMd = normalizeDocLinks(
+  `${readme}\n\n---\n\n${development}\n\n---\n\n${deploy}`
+);

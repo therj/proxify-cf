@@ -2,7 +2,8 @@ import { Hono, type Context } from 'hono';
 import { adminRoutes } from './admin/routes';
 import { proxyHandler } from './proxy/handler';
 import { Env } from './env';
-import { findRouteForRequest } from './repo/routes';
+import { getCfgEpoch } from './cache/epoch';
+import { cachedFindRouteForRequest } from './cache/metadata';
 import { healthRoutes } from './health/routes';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -19,9 +20,17 @@ const fetchSpaShell = (c: Context<{ Bindings: Env }>) => {
 // Home + admin UI (same React build), OR reverse-proxy when Host/path matches a configured route
 app.get('/', async (c) => {
   const host = c.req.header('Host') ?? '';
-  const proxyRoute = await findRouteForRequest(c.env.DB, host, '/');
+  const url = new URL(c.req.url);
+  const cfgEpoch = await getCfgEpoch(c.env.proxify_cache);
+  const proxyRoute = await cachedFindRouteForRequest(
+    c.env.proxify_cache,
+    c.env.DB,
+    cfgEpoch,
+    host,
+    url.pathname
+  );
   if (proxyRoute) {
-    return proxyHandler(c);
+    return proxyHandler(c, { route: proxyRoute });
   }
   return fetchSpaShell(c);
 });
@@ -58,6 +67,6 @@ app.get('/admin/*', serveSpaFallback);
 app.get('/docs', serveSpaFallback);
 app.get('/docs/*', serveSpaFallback);
 
-app.all('*', proxyHandler);
+app.all('*', (c) => proxyHandler(c));
 
 export default app;

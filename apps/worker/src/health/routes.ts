@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import type { Env } from '../env';
+import { SYS_HEALTH_PROBE } from '../cache/keys';
 
 /** All liveness / readiness endpoints live under `/health` (not under `/admin`). */
 export const healthRoutes = new Hono<{ Bindings: Env }>();
@@ -32,7 +33,7 @@ async function checkKV(kv: KVNamespace | undefined): Promise<CheckResult> {
   }
   const t0 = performance.now();
   try {
-    await kv.get('__health__', { type: 'text' });
+    await kv.get(SYS_HEALTH_PROBE, { type: 'text' });
     return { ok: true, latency_ms: Math.round(performance.now() - t0) };
   } catch (e) {
     return {

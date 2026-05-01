@@ -35,10 +35,6 @@
   padding: 16px 0 28px;
   margin-bottom: 8px;
   border-bottom: 1px solid var(--divider-subtle);
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: linear-gradient(to bottom, var(--bg-color) 70%, transparent);
 }
 
 .tocLabel {

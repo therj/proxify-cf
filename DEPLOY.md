@@ -24,6 +24,31 @@ pnpm exec wrangler kv namespace create proxify_cache
 
 Copy the **database ID** and **KV namespace ID** from the command output.
 
+### KV cache (runtime)
+
+The Worker uses the same namespace for **application cache** (not only connectivity checks):
+
+- **`v1:meta:cfg_epoch`** — single monotonic counter; every cached key embeds this value, so **incrementing** it invalidates **proxy validation caches**, **admin JSON GET caches**, and related entries without prefix-delete (orphan keys expire via per-key TTL).
+- **Proxy path** (KV TTL **4 hours**; safety net only): route lookup by host/path, route outbound headers, JWT signing key rows (**public** fields only — never private keys), grant checks, JTI revocation. Mutations bump **`cfg_epoch`** so stale values are not served for long.
+- **Admin API** (same **4h** KV TTL): cached list/read **GET** payloads (routes, route headers, clients, keys, tokens, grants). **`/audit`** stays **D1-only** (high churn / freshness). Proxied **upstream** responses are **not** cached.
+
+**`/health`** probes **`v1:sys:health_probe`** — unrelated to epoch bumps.
+
+**Manual reset** (admin API) — bumps **`cfg_epoch`** (same effect for both scopes below):
+
+```http
+POST /admin/api/v1/cache/purge
+Content-Type: application/json
+
+{"scope":"all"}
+```
+
+`scope` is **`all`** or **`metadata`** (equivalent: one epoch). Response includes **`{ cfg_epoch }`**. Audited as **`CACHE_PURGE`**.
+
+**Automatic reset**: **`bumpAfterProxyMutation`** runs after route/header/grant/key mutations, client create/update, mint/revoke token, etc., so KV stays aligned with D1.
+
+Workers KV is **eventually consistent**; immediately after a purge, a few requests might still see an old cached value until propagation completes.
+
 ---
 
 ## 3. Configure `wrangler.toml`
@@ -182,7 +207,7 @@ Restrict **`deploy.yml`** to trusted branches (e.g. only `main`) so forks cannot
 | **Local dev** | The Miniflare D1 database lives under something like `apps/worker/.wrangler/`. Deleting that folder, recloning without copying state, or SQLite **`SQLITE_BUSY`** / corruption during reload can wipe or lock local data. |
 | **Production** | Recreating the D1 database, applying migrations to a **new** DB ID, or pointing `wrangler.toml` at wrong IDs creates an **empty** database. |
 | **KEK rotated or lost** | Server-issued keys stored encrypted with the old KEK **cannot be decrypted**; issue new keys and revoke old ones. |
-| **KV `CACHE`** | Clearing or replacing the namespace drops cached entries only (not your primary D1 rows unless you stored something there intentionally). |
+| **KV `proxify_cache`** | Replacing the namespace ID in `wrangler.toml` drops all cached entries (see §2). Does not delete D1 data. |
 
 **Backups (production)**
 
@@ -217,5 +242,17 @@ Run from **`apps/worker`** (or prefix with `pnpm exec wrangler` from that direct
 | Deploy Worker | `pnpm run deploy` |
 | Apply D1 migrations (remote) | `pnpm exec wrangler d1 migrations apply proxify-db --remote` |
 | Set `KEK` secret | `pnpm exec wrangler secret put KEK` |
+
+### Purge KV application cache (HTTP)
+
+Bump **`cfg_epoch`** so all epoch-keyed KV entries become stale (same as **`scope`** `all` / `metadata` in §2). Requires whatever auth your Worker uses for **`/admin/api/v1/*`** (e.g. Cloudflare Access session):
+
+```bash
+curl -sS -X POST "https://YOUR_WORKER_HOST/admin/api/v1/cache/purge" \
+  -H "Content-Type: application/json" \
+  -d '{"scope":"all"}'
+```
+
+Example response shape: `{ "data": { "cfg_epoch": 3 } }`.
 
 For Wrangler CLI changes after upgrades, run `pnpm exec wrangler --help`.

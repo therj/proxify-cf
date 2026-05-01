@@ -36,7 +36,7 @@ export const Layout: React.FC = () => {
           ))}
         </nav>
       </aside>
-      <main className={styles.main}>
+      <main className={styles.main} data-scroll-root="admin">
         <Outlet />
       </main>
     </div>

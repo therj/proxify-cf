@@ -61,6 +61,12 @@ pnpm --filter admin dev:hmr
 
 Same URLs as above on port **5173**.
 
+## KV caching (local)
+
+`wrangler dev` (Miniflare) binds **`proxify_cache`** like production. On cacheable code paths the Worker **reads KV first**, then D1 on miss. Admin list **GET** endpoints and proxy auth metadata share the same **`v1:meta:cfg_epoch`** invalidation as in prod (TTL is **4 hours** as a backstop only).
+
+After changing routes, keys, or grants, the app bumps the epoch on relevant mutations; you can also call **`POST /admin/api/v1/cache/purge`** with `{"scope":"all"}` if you need a manual reset. To wipe **all** local Worker state (D1 + KV files under Miniflare), delete **`apps/worker/.wrangler/`** and run **`pnpm --filter worker db:migrate:local`** again before **`pnpm dev`** / **`pnpm dev:hmr`**.
+
 ## Advanced (usually unnecessary)
 
 Routing the worker’s **`/`** through port **5173** for a single URL adds Wrangler proxy complexity. Using **5173 for the UI** and **8787 for the API** is the usual Vite pattern.
