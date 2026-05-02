@@ -67,6 +67,10 @@ Same URLs as above on port **5173**.
 
 After changing routes, keys, or grants, the app bumps the epoch on relevant mutations; you can also call **`POST /admin/api/v1/cache/purge`** with `{"scope":"all"}` if you need a manual reset. To wipe **all** local Worker state (D1 + KV files under Miniflare), delete **`apps/worker/.wrangler/`** and run **`pnpm --filter worker db:migrate:local`** again before **`pnpm dev`** / **`pnpm dev:hmr`**.
 
+### Access logs (local)
+
+Traffic through the proxy writes **`access_log`** rows into **local D1** (same as production schema). **`GET /admin/api/v1/access`** reads straight from D1 with no KV cache. Exercise proxied routes against **`localhost:8787`** (or your dev hostname) and inspect **Access logs** in the admin UI or query local SQLite under Miniflare if needed.
+
 ## Advanced (usually unnecessary)
 
 Routing the worker’s **`/`** through port **5173** for a single URL adds Wrangler proxy complexity. Using **5173 for the UI** and **8787 for the API** is the usual Vite pattern.

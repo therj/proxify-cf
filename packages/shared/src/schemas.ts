@@ -71,3 +71,51 @@ export const AuditLogSchema = z.object({
   kid: z.string().nullable().optional(),
   route_id: z.string().nullable().optional(),
 });
+
+/** Outcomes for proxied traffic (JWT + upstream); kept as lowercase snake strings for SQL filtering. */
+export const ACCESS_OUTCOME_VALUES = [
+  'no_route',
+  'no_auth',
+  'empty_token',
+  'jwt_missing_kid',
+  'jwt_invalid_header',
+  'key_revoked_or_unknown',
+  'jwt_verify_failed',
+  'missing_client_id',
+  'token_revoked',
+  'no_grant',
+  'upstream_ok',
+  'upstream_error',
+  'timeout',
+] as const;
+
+export const AccessLogSchema = z.object({
+  id: z.string(),
+  ts: z.number(),
+  host: z.string(),
+  path: z.string(),
+  method: z.string(),
+  route_id: z.string().nullable(),
+  client_id: z.string().nullable(),
+  kid: z.string().nullable(),
+  jti: z.string().nullable(),
+  outcome: z.enum([
+    'no_route',
+    'no_auth',
+    'empty_token',
+    'jwt_missing_kid',
+    'jwt_invalid_header',
+    'key_revoked_or_unknown',
+    'jwt_verify_failed',
+    'missing_client_id',
+    'token_revoked',
+    'no_grant',
+    'upstream_ok',
+    'upstream_error',
+    'timeout',
+  ]),
+  upstream_status: z.number().nullable(),
+  latency_ms: z.number().nullable(),
+  client_ip: z.string().nullable(),
+  detail: z.string().nullable(),
+});

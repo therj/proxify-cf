@@ -29,6 +29,7 @@ import {
 } from '../repo/keys';
 import { getGrants, createGrant, revokeGrant } from '../repo/grants';
 import { getAuditLogs, appendAudit, getDistinctAuditActions, type AuditLogFilters } from '../repo/audit';
+import { listAccessLogs, type AccessLogFilters } from '../repo/accessLog';
 
 export const adminRoutes = new Hono<{ Bindings: Env }>();
 
@@ -425,6 +426,31 @@ adminRoutes.delete('/grants/:client_id/:route_id', async (c) => {
   }
 });
 
+function parseAccessFilters(c: { req: { query: (k: string) => string | undefined } }): AccessLogFilters {
+  const client_id = c.req.query('client_id') || undefined;
+  const route_id = c.req.query('route_id') || undefined;
+  const kid = c.req.query('kid') || undefined;
+  const outcome = c.req.query('outcome') || undefined;
+  const sinceRaw = c.req.query('since');
+  const untilRaw = c.req.query('until');
+  const limitRaw = c.req.query('limit');
+  const offsetRaw = c.req.query('offset');
+  const since = sinceRaw !== undefined ? Number(sinceRaw) : undefined;
+  const until = untilRaw !== undefined ? Number(untilRaw) : undefined;
+  const limit = limitRaw !== undefined ? Number(limitRaw) : undefined;
+  const offset = offsetRaw !== undefined ? Number(offsetRaw) : undefined;
+  return {
+    client_id: client_id || null,
+    route_id: route_id || null,
+    kid: kid || null,
+    outcome: outcome || null,
+    since: Number.isFinite(since as number) ? since : undefined,
+    until: Number.isFinite(until as number) ? until : undefined,
+    limit: Number.isFinite(limit as number) ? limit : undefined,
+    offset: Number.isFinite(offset as number) ? offset : undefined,
+  };
+}
+
 function parseAuditFilters(c: { req: { query: (k: string) => string | undefined } }): AuditLogFilters {
   const client_id = c.req.query('client_id') || undefined;
   const action = c.req.query('action') || undefined;
@@ -445,6 +471,16 @@ function parseAuditFilters(c: { req: { query: (k: string) => string | undefined 
     offset: Number.isFinite(offset as number) ? offset : undefined,
   };
 }
+
+// --- Access logs API (D1 only; not KV-cached) ---
+adminRoutes.get('/access', async (c) => {
+  try {
+    const logs = await listAccessLogs(c.env.DB, parseAccessFilters(c));
+    return c.json({ data: logs });
+  } catch (error) {
+    return c.json({ error: String(error) }, 500);
+  }
+});
 
 // --- Audit API ---
 adminRoutes.get('/audit/actions', async (c) => {

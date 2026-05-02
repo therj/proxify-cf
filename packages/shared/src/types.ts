@@ -8,3 +8,5 @@ export type RouteHeader = z.infer<typeof schemas.RouteHeaderSchema>;
 export type ClientRouteGrant = z.infer<typeof schemas.ClientRouteGrantSchema>;
 export type IssuedToken = z.infer<typeof schemas.IssuedTokenSchema>;
 export type AuditLog = z.infer<typeof schemas.AuditLogSchema>;
+export type AccessLog = z.infer<typeof schemas.AccessLogSchema>;
+export type AccessOutcome = (typeof schemas.ACCESS_OUTCOME_VALUES)[number];

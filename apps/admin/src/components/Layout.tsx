@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { Shield, LayoutDashboard, Users, Route, KeyRound, Link2, Activity } from 'lucide-react';
+import { Shield, LayoutDashboard, Users, Route, KeyRound, Link2, ScrollText, Activity } from 'lucide-react';
 import styles from './Layout.module.css';
 
 const navItems = [
@@ -9,6 +9,7 @@ const navItems = [
   { path: '/admin/routes', label: 'Routes', icon: Route },
   { path: '/admin/keys', label: 'Keys & Tokens', icon: KeyRound },
   { path: '/admin/grants', label: 'Grants', icon: Link2 },
+  { path: '/admin/access', label: 'Access logs', icon: ScrollText },
   { path: '/admin/audit', label: 'Audit Log', icon: Activity },
 ];
 

@@ -1,4 +1,12 @@
-import { Route, Client, Key, IssuedToken, ClientRouteGrant, AuditLog } from '@proxify-cf/shared';
+import {
+  Route,
+  Client,
+  Key,
+  IssuedToken,
+  ClientRouteGrant,
+  AuditLog,
+  AccessLog,
+} from '@proxify-cf/shared';
 
 const BASE_URL = '/admin/api/v1';
 
@@ -99,5 +107,29 @@ export const api = {
       return fetchApi<AuditLog[]>(`/audit${qs ? `?${qs}` : ''}`);
     },
     actions: () => fetchApi<string[]>('/audit/actions'),
+  },
+  access: {
+    list: (filters?: {
+      client_id?: string;
+      route_id?: string;
+      kid?: string;
+      outcome?: string;
+      since?: number;
+      until?: number;
+      limit?: number;
+      offset?: number;
+    }) => {
+      const q = new URLSearchParams();
+      if (filters?.client_id) q.set('client_id', filters.client_id);
+      if (filters?.route_id) q.set('route_id', filters.route_id);
+      if (filters?.kid) q.set('kid', filters.kid);
+      if (filters?.outcome) q.set('outcome', filters.outcome);
+      if (filters?.since != null) q.set('since', String(filters.since));
+      if (filters?.until != null) q.set('until', String(filters.until));
+      if (filters?.limit != null) q.set('limit', String(filters.limit));
+      if (filters?.offset != null) q.set('offset', String(filters.offset));
+      const qs = q.toString();
+      return fetchApi<AccessLog[]>(`/access${qs ? `?${qs}` : ''}`);
+    },
   },
 };

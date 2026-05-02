@@ -16,4 +16,5 @@ See [DEVELOPMENT.md](./DEVELOPMENT.md) for local setup (**Vite HMR** on `http://
 - **Host & path routing**: Map incoming host + path prefix to an upstream URL (with optional header injection and method/body rules).
 - **JWT authentication**: Mint tokens or verify client-signed JWTs (e.g. **ES256**).
 - **Zero Trust**: Protect the admin UI with Cloudflare Access (optional path bypass for `/health`).
-- **Audit logs**: Administrative actions recorded in D1.
+- **Access logs**: Append-only proxied traffic telemetry in D1 (host/path, JWT context, upstream status/latency, outcomes including denied requests). **Not** stored in KV and **not** admin-list cached—fresh reads from D1.
+- **Audit logs**: Administrative actions recorded in D1 (separate from access logs).

@@ -13,6 +13,7 @@ import { RouteDetail } from './pages/RouteDetail';
 import { Keys } from './pages/Keys';
 import { Grants } from './pages/Grants';
 import { Audit } from './pages/Audit';
+import { Access } from './pages/Access';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
           <Route path="routes/:routeId" element={<RouteDetail />} />
           <Route path="keys" element={<Keys />} />
           <Route path="grants" element={<Grants />} />
+          <Route path="access" element={<Access />} />
           <Route path="audit" element={<Audit />} />
         </Route>
       </RouterRoutes>

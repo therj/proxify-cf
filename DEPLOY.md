@@ -30,7 +30,11 @@ The Worker uses the same namespace for **application cache** (not only connectiv
 
 - **`v1:meta:cfg_epoch`** — single monotonic counter; every cached key embeds this value, so **incrementing** it invalidates **proxy validation caches**, **admin JSON GET caches**, and related entries without prefix-delete (orphan keys expire via per-key TTL).
 - **Proxy path** (KV TTL **4 hours**; safety net only): route lookup by host/path, route outbound headers, JWT signing key rows (**public** fields only — never private keys), grant checks, JTI revocation. Mutations bump **`cfg_epoch`** so stale values are not served for long.
-- **Admin API** (same **4h** KV TTL): cached list/read **GET** payloads (routes, route headers, clients, keys, tokens, grants). **`/audit`** stays **D1-only** (high churn / freshness). Proxied **upstream** responses are **not** cached.
+- **Admin API** (same **4h** KV TTL): cached list/read **GET** payloads (routes, route headers, clients, keys, tokens, grants). **`/audit`** and **`/access`** stay **D1-only** (high churn / freshness); **`GET /access`** is intentionally **not** wrapped in the admin KV cache so listings stay current. Proxied **upstream** responses are **not** cached.
+
+### Access logs (`access_log` in D1)
+
+Proxied requests append rows to the **`access_log`** table (JWT/upstream outcomes, optional client IP, denied attempts when metadata exists). Storage is **D1 only**, not KV—high write volume and need for time-range scans make KV a poor fit. Plan retention or export externally if you need long-term archives; D1 does not automatically prune old rows.
 
 **`/health`** probes **`v1:sys:health_probe`** — unrelated to epoch bumps.
 

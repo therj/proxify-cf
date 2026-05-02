@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../components/ui/Card';
-import { Users, Route, Key, KeyRound, Activity } from 'lucide-react';
+import { Users, Route, Key, KeyRound, Activity, ScrollText } from 'lucide-react';
 import { api } from '../lib/api';
-import { AuditLog, Client } from '@proxify-cf/shared';
+import { AuditLog, AccessLog, Client } from '@proxify-cf/shared';
 import { formatAuditSummary, effectiveClientId } from '../lib/auditDisplay';
 
 export const Dashboard = () => {
@@ -13,9 +13,11 @@ export const Dashboard = () => {
     { label: 'Active Routes', value: '...', icon: Route, color: '#86efac' },
     { label: 'Signing keys', value: '...', icon: Key, color: '#c4b5fd' },
     { label: 'Issued JWTs', value: '...', icon: KeyRound, color: '#fca5a5' },
+    { label: 'Access events (sample)', value: '...', icon: ScrollText, color: '#93c5fd' },
     { label: 'Audit events', value: '...', icon: Activity, color: '#fde047' },
   ]);
   const [recentActivity, setRecentActivity] = useState<AuditLog[]>([]);
+  const [recentAccess, setRecentAccess] = useState<AccessLog[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -28,6 +30,7 @@ export const Dashboard = () => {
         api.routes.list(),
         api.keys.list(),
         api.keys.listTokens(),
+        api.access.list({ limit: 100 }),
         api.audit.list({ limit: 100 }),
       ]);
 
@@ -35,7 +38,8 @@ export const Dashboard = () => {
       const routes = results[1].status === 'fulfilled' ? results[1].value : [];
       const signingKeys = results[2].status === 'fulfilled' ? results[2].value : [];
       const tokens = results[3].status === 'fulfilled' ? results[3].value : [];
-      const audit = results[4].status === 'fulfilled' ? results[4].value : [];
+      const accessSample = results[4].status === 'fulfilled' ? results[4].value : [];
+      const audit = results[5].status === 'fulfilled' ? results[5].value : [];
 
       results.forEach((r, i) => {
         if (r.status === 'rejected') {
@@ -50,9 +54,16 @@ export const Dashboard = () => {
         { label: 'Active Routes', value: String(routes.length), icon: Route, color: '#86efac' },
         { label: 'Signing keys', value: String(signingKeys.length), icon: Key, color: '#c4b5fd' },
         { label: 'Issued JWTs', value: String(tokens.length), icon: KeyRound, color: '#fca5a5' },
+        {
+          label: 'Access events (sample)',
+          value: String(accessSample.length),
+          icon: ScrollText,
+          color: '#93c5fd',
+        },
         { label: 'Audit events', value: String(audit.length), icon: Activity, color: '#fde047' },
       ]);
 
+      setRecentAccess(accessSample.slice(0, 5));
       setRecentActivity(audit.slice(0, 5));
       setIsLoading(false);
     };
@@ -96,6 +107,79 @@ export const Dashboard = () => {
           </Card>
         ))}
       </div>
+
+      <h3>Recent proxied access</h3>
+      <p style={{ margin: '4px 0 12px', fontSize: 13, color: 'var(--text-secondary)' }}>
+        Latest rows from D1 (not the audit log).{' '}
+        <button
+          type="button"
+          onClick={() => navigate('/admin/access')}
+          style={{
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            color: 'var(--accent-primary)',
+            cursor: 'pointer',
+            font: 'inherit',
+            textDecoration: 'underline',
+          }}
+        >
+          Open access logs
+        </button>
+      </p>
+      <Card style={{ marginTop: 0, marginBottom: 32 }}>
+        {isLoading ? (
+          <div style={{ color: 'var(--text-secondary)' }}>Loading...</div>
+        ) : recentAccess.length === 0 ? (
+          <div style={{ color: 'var(--text-secondary)' }}>No proxied traffic recorded yet.</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {recentAccess.map((ev, i) => (
+              <div
+                key={ev.id}
+                tabIndex={0}
+                role="button"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '12px 8px',
+                  borderBottom: i === recentAccess.length - 1 ? 'none' : '1px solid var(--divider-subtle)',
+                  cursor: 'pointer',
+                }}
+                onClick={() => navigate('/admin/access')}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    navigate('/admin/access');
+                  }
+                }}
+              >
+                <div
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    background: '#93c5fd',
+                    flexShrink: 0,
+                  }}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ fontWeight: 500 }}>{ev.outcome}</span>
+                  <span style={{ color: 'var(--text-secondary)' }}> · </span>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
+                    {ev.host}
+                    {ev.path}
+                  </span>
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text-secondary)', flexShrink: 0 }}>
+                  {new Date(ev.ts).toLocaleString()}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
 
       <h3>Recent Activity</h3>
       <Card style={{ marginTop: 16 }}>
