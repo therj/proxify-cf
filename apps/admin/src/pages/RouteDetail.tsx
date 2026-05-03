@@ -7,10 +7,14 @@ import { EntityAuditHistoryModal } from '../components/EntityAuditHistoryModal';
 import { api } from '../lib/api';
 import { Client, ClientRouteGrant, Route } from '@proxify-cf/shared';
 import { AdminPageTitle } from '../components/AdminPageTitle';
+import { useAdminApiRetryEpoch } from '../context/AdminApiRetryContext';
+import { DataLoadError } from '../components/DataLoadError';
 import { formatDateTime } from '../lib/formatDateTime';
+import { loadErrorMessage } from '../lib/loadErrorMessage';
 
 export const RouteDetail = () => {
   const navigate = useNavigate();
+  const adminApiRetryEpoch = useAdminApiRetryEpoch();
   const { routeId } = useParams<{ routeId: string }>();
   const [auditOpen, setAuditOpen] = useState(false);
   const [routes, setRoutes] = useState<Route[]>([]);
@@ -18,6 +22,7 @@ export const RouteDetail = () => {
   const [grants, setGrants] = useState<ClientRouteGrant[]>([]);
   const [headers, setHeaders] = useState<{ id?: string; header_name: string; header_value: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const route = useMemo(() => routes.find((r) => r.id === routeId), [routes, routeId]);
   const nameByClient = useMemo(() => new Map(clients.map((c) => [c.id, c.name])), [clients]);
@@ -25,6 +30,7 @@ export const RouteDetail = () => {
   const loadAll = useCallback(async () => {
     if (!routeId) return;
     setLoading(true);
+    setLoadError(null);
     try {
       const [routesData, clientsData, grantsData, headersData] = await Promise.all([
         api.routes.list(),
@@ -36,12 +42,13 @@ export const RouteDetail = () => {
       setClients(clientsData);
       setGrants(grantsData);
       setHeaders(headersData);
-    } catch (e) {
+    } catch (e: unknown) {
       console.error(e);
+      setLoadError(loadErrorMessage(e));
     } finally {
       setLoading(false);
     }
-  }, [routeId]);
+  }, [routeId, adminApiRetryEpoch]);
 
   useEffect(() => {
     loadAll();
@@ -53,7 +60,20 @@ export const RouteDetail = () => {
     return <p style={{ color: 'var(--text-secondary)' }}>Invalid route.</p>;
   }
 
-  if (!loading && !route) {
+  if (!loading && loadError) {
+    return (
+      <div>
+        <Link to="/admin/routes" style={{ color: 'var(--accent-primary)', fontSize: 14 }}>
+          ← Back to Routes
+        </Link>
+        <div style={{ marginTop: 24 }}>
+          <DataLoadError message={loadError} onRetry={loadAll} />
+        </div>
+      </div>
+    );
+  }
+
+  if (!loading && !loadError && !route) {
     return (
       <div>
         <Link to="/admin/routes" style={{ color: 'var(--accent-primary)', fontSize: 14 }}>

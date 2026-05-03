@@ -8,7 +8,10 @@ import type { AccessLog, Client, Key, Route } from '@proxify-cf/shared';
 import nc from '../components/ui/nativeControls.module.css';
 import tableStyles from '../components/ui/Table.module.css';
 import { AdminPageTitle } from '../components/AdminPageTitle';
+import { useAdminApiRetryEpoch } from '../context/AdminApiRetryContext';
+import { DataLoadError } from '../components/DataLoadError';
 import { formatDateTime } from '../lib/formatDateTime';
+import { loadErrorMessage } from '../lib/loadErrorMessage';
 
 const FETCH_LIMIT = 200;
 
@@ -22,11 +25,18 @@ function formatDetail(detail: string | null): string {
 }
 
 export const Access = () => {
+  const adminApiRetryEpoch = useAdminApiRetryEpoch();
   const [logs, setLogs] = useState<AccessLog[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [routes, setRoutes] = useState<Route[]>([]);
   const [keys, setKeys] = useState<Key[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [refError, setRefError] = useState<string | null>(null);
+  const [refRetryKey, setRefRetryKey] = useState(0);
+  const [keysError, setKeysError] = useState<string | null>(null);
+  const [keysRetryKey, setKeysRetryKey] = useState(0);
+  const [logsError, setLogsError] = useState<string | null>(null);
+  const [logsRetryKey, setLogsRetryKey] = useState(0);
 
   const [filterClientId, setFilterClientId] = useState('');
   const [filterRouteId, setFilterRouteId] = useState('');
@@ -66,15 +76,17 @@ export const Access = () => {
         if (!cancelled) {
           setClients(clientsData);
           setRoutes(routesData);
+          setRefError(null);
         }
-      } catch (e) {
+      } catch (e: unknown) {
         console.error(e);
+        if (!cancelled) setRefError(loadErrorMessage(e));
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refRetryKey, adminApiRetryEpoch]);
 
   useEffect(() => {
     let cancelled = false;
@@ -83,20 +95,26 @@ export const Access = () => {
         const keysData = await api.keys.list(filterClientId ? { client_id: filterClientId } : undefined);
         if (cancelled) return;
         setKeys(keysData);
+        setKeysError(null);
         setFilterKid((prev) => (prev && !keysData.some((k) => k.kid === prev) ? '' : prev));
-      } catch (e) {
+      } catch (e: unknown) {
         console.error(e);
+        if (!cancelled) {
+          setKeys([]);
+          setKeysError(loadErrorMessage(e));
+        }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [filterClientId]);
+  }, [filterClientId, keysRetryKey, adminApiRetryEpoch]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setIsLoading(true);
+      setLogsError(null);
       try {
         const data = await api.access.list({
           ...(filterClientId ? { client_id: filterClientId } : {}),
@@ -106,9 +124,16 @@ export const Access = () => {
           ...(filterHostPathDebounced ? { host_path: filterHostPathDebounced } : {}),
           limit: FETCH_LIMIT,
         });
-        if (!cancelled) setLogs(data);
-      } catch (e) {
+        if (!cancelled) {
+          setLogs(data);
+          setLogsError(null);
+        }
+      } catch (e: unknown) {
         console.error(e);
+        if (!cancelled) {
+          setLogs([]);
+          setLogsError(loadErrorMessage(e));
+        }
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -116,7 +141,15 @@ export const Access = () => {
     return () => {
       cancelled = true;
     };
-  }, [filterClientId, filterRouteId, filterKid, filterOutcome, filterHostPathDebounced]);
+  }, [
+    filterClientId,
+    filterRouteId,
+    filterKid,
+    filterOutcome,
+    filterHostPathDebounced,
+    logsRetryKey,
+    adminApiRetryEpoch,
+  ]);
 
   const clearFilters = () => {
     setFilterClientId('');
@@ -130,6 +163,22 @@ export const Access = () => {
   return (
     <div>
       <AdminPageTitle title="Access Logs" />
+
+      {refError || keysError ? (
+        <div style={{ marginBottom: 16 }}>
+          <DataLoadError
+            variant="banner"
+            title="Filter bar"
+            message={[refError && `Clients & routes — ${refError}`, keysError && `Signing keys — ${keysError}`]
+              .filter((line): line is string => Boolean(line))
+              .join('\n')}
+            onRetry={() => {
+              setRefRetryKey((k) => k + 1);
+              setKeysRetryKey((k) => k + 1);
+            }}
+          />
+        </div>
+      ) : null}
 
       <Table
         className={tableStyles.tableFixed}
@@ -230,6 +279,12 @@ export const Access = () => {
             <tr>
               <Td colSpan={8} style={{ textAlign: 'center' }}>
                 Loading access logs...
+              </Td>
+            </tr>
+          ) : logsError ? (
+            <tr>
+              <Td colSpan={8} style={{ padding: '24px 16px', verticalAlign: 'top' }}>
+                <DataLoadError message={logsError} onRetry={() => setLogsRetryKey((k) => k + 1)} />
               </Td>
             </tr>
           ) : logs.length === 0 ? (

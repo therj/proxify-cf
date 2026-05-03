@@ -7,26 +7,79 @@ import {
   AuditLog,
   AccessLog,
 } from '@proxify-cf/shared';
+import { notifyFatalApiError } from './fatalApiError';
 
 const BASE_URL = '/admin/api/v1';
 
-async function fetchApi<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  });
+const ERROR_DETAIL_MAX = 200;
 
-  const json = await response.json();
+function clipErrorDetail(s: string): string {
+  const t = s.replace(/^Error:\s*/i, '').trim();
+  return t.length <= ERROR_DETAIL_MAX ? t : `${t.slice(0, ERROR_DETAIL_MAX - 1)}…`;
+}
+
+function isAuthLikeFailure(response: Response): boolean {
+  if (response.type === 'opaque') return true;
+  if (response.status === 401 || response.status === 403) return true;
+  if (response.redirected && response.url.includes('cloudflareaccess.com')) return true;
+  return false;
+}
+
+async function fetchApi<T>(path: string, options?: RequestInit): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(`${BASE_URL}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+    });
+  } catch {
+    notifyFatalApiError({ message: 'No network response.', variant: 'network' });
+    throw new Error('Network error');
+  }
+
+  const authLike = isAuthLikeFailure(response);
+  const text = await response.text();
+  let json: unknown = null;
+  if (text) {
+    try {
+      json = JSON.parse(text) as unknown;
+    } catch {
+      const variant: 'session' | 'server' | 'network' = authLike
+        ? 'session'
+        : response.status >= 500
+          ? 'server'
+          : 'network';
+      notifyFatalApiError({
+        message:
+          variant === 'session'
+            ? 'Not JSON (often a login page).'
+            : variant === 'server'
+              ? `HTTP ${response.status}, body wasn’t JSON.`
+              : 'Response wasn’t JSON.',
+        variant,
+      });
+      throw new SyntaxError('Invalid JSON');
+    }
+  }
 
   if (!response.ok) {
-    throw new Error(json.error || `HTTP Error ${response.status}`);
+    const apiError =
+      json != null && typeof json === 'object' && json !== null && 'error' in json
+        ? String((json as { error: unknown }).error)
+        : `HTTP ${response.status}`;
+    const clipped = clipErrorDetail(apiError);
+    // Only block the UI for auth-like failures. JSON 5xx (e.g. D1/SQLite) → inline page errors.
+    if (authLike) {
+      notifyFatalApiError({ message: clipped, variant: 'session' });
+    }
+    throw new Error(clipped);
   }
 
   if (json != null && typeof json === 'object' && 'data' in json) {
-    return json.data as T;
+    return (json as { data: T }).data;
   }
   return json as T;
 }

@@ -9,9 +9,13 @@ import nc from '../components/ui/nativeControls.module.css';
 import tableStyles from '../components/ui/Table.module.css';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { AdminPageTitle } from '../components/AdminPageTitle';
+import { useAdminApiRetryEpoch } from '../context/AdminApiRetryContext';
+import { DataLoadError } from '../components/DataLoadError';
 import { formatDateTime } from '../lib/formatDateTime';
+import { loadErrorMessage } from '../lib/loadErrorMessage';
 export const Grants = () => {
   const navigate = useNavigate();
+  const adminApiRetryEpoch = useAdminApiRetryEpoch();
   const [searchParams, setSearchParams] = useSearchParams();
   const filterClientId = searchParams.get('client_id') || undefined;
   const filterRouteId = searchParams.get('route_id') || undefined;
@@ -20,6 +24,7 @@ export const Grants = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [routes, setRoutes] = useState<Route[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [listLoadError, setListLoadError] = useState<string | null>(null);
 
   const [isModalOpen, setModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -29,6 +34,7 @@ export const Grants = () => {
 
   const loadData = async () => {
     setIsLoading(true);
+    setListLoadError(null);
     try {
       const grantFilters: { client_id?: string; route_id?: string } = {};
       if (filterClientId) grantFilters.client_id = filterClientId;
@@ -48,8 +54,9 @@ export const Grants = () => {
       if (routesData.length > 0 && !formData.route_id) {
         setFormData((prev) => ({ ...prev, route_id: routesData[0].id }));
       }
-    } catch (e) {
+    } catch (e: unknown) {
       console.error(e);
+      setListLoadError(loadErrorMessage(e));
     } finally {
       setIsLoading(false);
     }
@@ -57,7 +64,7 @@ export const Grants = () => {
 
   useEffect(() => {
     loadData();
-  }, [filterClientId, filterRouteId]);
+  }, [filterClientId, filterRouteId, adminApiRetryEpoch]);
 
   const handleCreate = async () => {
     setIsSaving(true);
@@ -169,8 +176,14 @@ export const Grants = () => {
         <tbody>
           {isLoading ? (
             <tr><Td colSpan={4} style={{ textAlign: 'center' }}>Loading grants...</Td></tr>
+          ) : listLoadError ? (
+            <tr>
+              <Td colSpan={4} style={{ padding: '24px 16px', verticalAlign: 'top' }}>
+                <DataLoadError message={listLoadError} onRetry={loadData} />
+              </Td>
+            </tr>
           ) : grants.length === 0 ? (
-             <tr><Td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No grants found.</Td></tr>
+            <tr><Td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No grants found.</Td></tr>
           ) : (
             grants.map((g) => {
               const clientName = clients.find((c) => c.id === g.client_id)?.name || g.client_id;

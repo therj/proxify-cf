@@ -10,9 +10,13 @@ import { Route } from '@proxify-cf/shared';
 import nc from '../components/ui/nativeControls.module.css';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { AdminPageTitle } from '../components/AdminPageTitle';
+import { useAdminApiRetryEpoch } from '../context/AdminApiRetryContext';
+import { DataLoadError } from '../components/DataLoadError';
+import { loadErrorMessage } from '../lib/loadErrorMessage';
 
 export const Routes = () => {
   const navigate = useNavigate();
+  const adminApiRetryEpoch = useAdminApiRetryEpoch();
   const [routes, setRoutes] = useState<Route[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setModalOpen] = useState(false);
@@ -33,14 +37,17 @@ export const Routes = () => {
   // UI State
   const [activeTab, setActiveTab] = useState<'details' | 'headers'>('details');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [listLoadError, setListLoadError] = useState<string | null>(null);
 
   const loadRoutes = async () => {
     setIsLoading(true);
+    setListLoadError(null);
     try {
       const data = await api.routes.list();
       setRoutes(data);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
+      setListLoadError(loadErrorMessage(e));
     } finally {
       setIsLoading(false);
     }
@@ -48,7 +55,7 @@ export const Routes = () => {
 
   useEffect(() => {
     loadRoutes();
-  }, []);
+  }, [adminApiRetryEpoch]);
 
   const resetHeaderDraft = () => {
     setEditingHeaderIndex(null);
@@ -202,6 +209,12 @@ export const Routes = () => {
         <tbody>
           {isLoading ? (
             <tr><Td colSpan={4} style={{ textAlign: 'center' }}>Loading routes...</Td></tr>
+          ) : listLoadError ? (
+            <tr>
+              <Td colSpan={4} style={{ padding: '24px 16px', verticalAlign: 'top' }}>
+                <DataLoadError message={listLoadError} onRetry={loadRoutes} />
+              </Td>
+            </tr>
           ) : routes.length === 0 ? (
             <tr><Td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No routes found.</Td></tr>
           ) : (

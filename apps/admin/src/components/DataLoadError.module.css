@@ -1,0 +1,123 @@
+/* Matches table wrapper + glass cards: same border, radius, surface — no accent stripes */
+
+.panelWrap {
+  max-width: 28rem;
+  margin: 0 auto;
+}
+
+.panel {
+  border-radius: var(--radius-lg);
+  padding: 26px 22px 22px;
+  text-align: center;
+}
+
+.iconWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 14px;
+  border-radius: var(--radius-md);
+  background: var(--surface-hover);
+  border: 1px solid var(--surface-border);
+  color: var(--text-secondary);
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 8px;
+  color: var(--text-primary);
+}
+
+.message {
+  margin: 0 0 20px;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  word-break: break-word;
+  white-space: pre-line;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.hint {
+  margin: 16px 0 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  max-width: 26rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Banner — same chrome as Table.wrapper / filter strip */
+.banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px 16px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+}
+
+.bannerIcon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-top: 1px;
+  border-radius: var(--radius-md);
+  background: var(--surface-hover);
+  border: 1px solid var(--surface-border);
+  color: var(--text-secondary);
+}
+
+.bannerBody {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.bannerTitle {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  margin: 0 0 4px;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.bannerMessage {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  word-break: break-word;
+  white-space: pre-line;
+}
+
+.bannerActions {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  align-self: center;
+}
+
+.bannerHint {
+  flex-basis: 100%;
+  margin: 0;
+  padding-top: 2px;
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}

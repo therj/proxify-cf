@@ -9,6 +9,7 @@ import {
   ScrollText,
   Activity,
 } from 'lucide-react';
+import { AdminApiRetryProvider } from '../context/AdminApiRetryContext';
 import { AppHeader } from './AppHeader';
 import styles from './Layout.module.css';
 
@@ -45,7 +46,9 @@ export const Layout: React.FC = () => {
           </nav>
         </aside>
         <main className={styles.main} data-scroll-root="admin">
-          <Outlet />
+          <AdminApiRetryProvider>
+            <Outlet />
+          </AdminApiRetryProvider>
         </main>
       </div>
     </div>

@@ -8,11 +8,16 @@ import { Plus } from 'lucide-react';
 import { api } from '../lib/api';
 import { Client } from '@proxify-cf/shared';
 import { AdminPageTitle } from '../components/AdminPageTitle';
+import { useAdminApiRetryEpoch } from '../context/AdminApiRetryContext';
+import { DataLoadError } from '../components/DataLoadError';
 import { formatDate } from '../lib/formatDateTime';
+import { loadErrorMessage } from '../lib/loadErrorMessage';
 export const Clients = () => {
   const navigate = useNavigate();
+  const adminApiRetryEpoch = useAdminApiRetryEpoch();
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [listLoadError, setListLoadError] = useState<string | null>(null);
   const [isModalOpen, setModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,11 +26,13 @@ export const Clients = () => {
   const [formData, setFormData] = useState({ name: '', email: '', description: '' });
   const loadClients = async () => {
     setIsLoading(true);
+    setListLoadError(null);
     try {
       const data = await api.clients.list();
       setClients(data);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
+      setListLoadError(loadErrorMessage(e));
     } finally {
       setIsLoading(false);
     }
@@ -33,7 +40,7 @@ export const Clients = () => {
 
   useEffect(() => {
     loadClients();
-  }, []);
+  }, [adminApiRetryEpoch]);
 
   const handleOpenCreate = () => {
     setEditingId(null);
@@ -91,6 +98,12 @@ export const Clients = () => {
         <tbody>
           {isLoading ? (
             <tr><Td colSpan={5} style={{ textAlign: 'center' }}>Loading clients...</Td></tr>
+          ) : listLoadError ? (
+            <tr>
+              <Td colSpan={5} style={{ padding: '24px 16px', verticalAlign: 'top' }}>
+                <DataLoadError message={listLoadError} onRetry={loadClients} />
+              </Td>
+            </tr>
           ) : clients.length === 0 ? (
             <tr><Td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No clients found.</Td></tr>
           ) : (

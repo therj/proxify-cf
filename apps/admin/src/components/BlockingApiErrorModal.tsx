@@ -1,0 +1,84 @@
+import React, { useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from './ui/Button';
+import { PUBLIC_DEMO_ORIGIN } from '../lib/publicDemoOrigin';
+import type { FatalApiErrorVariant } from '../lib/fatalApiError';
+import styles from './BlockingApiErrorModal.module.css';
+
+type Props = {
+  open: boolean;
+  title: string;
+  message: string;
+  variant: FatalApiErrorVariant;
+  onTryAgain: () => void;
+};
+
+export function BlockingApiErrorModal({ open, title, message, variant, onTryAgain }: Props) {
+  useEffect(() => {
+    if (!open) return;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [open]);
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className={styles.backdrop}
+            aria-hidden
+          />
+          <div className={styles.wrapper} role="alertdialog" aria-modal="true" aria-labelledby="blocking-api-error-title">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 12 }}
+              className={styles.panel}
+            >
+              <h2 id="blocking-api-error-title" className={styles.title}>
+                {title}
+              </h2>
+              <div className={styles.content}>
+                {variant === 'session' ? (
+                  <>
+                    <p>
+                      Sign-in may not have finished (e.g. Cloudflare Access). Use <strong>Reload page</strong> for a full
+                      navigation; <strong>Try again</strong> only repeats API calls.
+                    </p>
+                    <p className={styles.demoBlock}>
+                      Demo:{' '}
+                      <a className={styles.demoLink} href={PUBLIC_DEMO_ORIGIN} target="_blank" rel="noopener noreferrer">
+                        {PUBLIC_DEMO_ORIGIN.replace(/^https:\/\//, '')}
+                      </a>
+                    </p>
+                  </>
+                ) : variant === 'server' ? (
+                  <p>Got HTML or non-JSON from the server. Try again or reload.</p>
+                ) : (
+                  <p>Request didn’t finish (network / DNS / proxy). Check connectivity, then try again or reload.</p>
+                )}
+                {message.trim() ? <div className={styles.detail}>{message}</div> : null}
+              </div>
+              <div className={styles.actions}>
+                <div className={styles.actionRow}>
+                  <Button type="button" size="lg" onClick={onTryAgain}>
+                    Try again
+                  </Button>
+                  <Button type="button" variant="secondary" size="lg" onClick={() => window.location.reload()}>
+                    Reload page
+                  </Button>
+                </div>
+                <p className={styles.reloadHint}>Reload helps complete Access sign-in.</p>
+              </div>
+            </motion.div>
+          </div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}

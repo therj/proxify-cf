@@ -10,8 +10,12 @@ import { Key, Client } from '@proxify-cf/shared';
 import nc from '../components/ui/nativeControls.module.css';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { AdminPageTitle } from '../components/AdminPageTitle';
+import { useAdminApiRetryEpoch } from '../context/AdminApiRetryContext';
+import { DataLoadError } from '../components/DataLoadError';
+import { loadErrorMessage } from '../lib/loadErrorMessage';
 export const Keys = () => {
   const navigate = useNavigate();
+  const adminApiRetryEpoch = useAdminApiRetryEpoch();
   const [searchParams, setSearchParams] = useSearchParams();
   const filterClientId = searchParams.get('client_id') || undefined;
 
@@ -24,7 +28,8 @@ export const Keys = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedKey, setGeneratedKey] = useState<any>(null); // To show private key once
   const [error, setError] = useState<string | null>(null);
-  
+  const [listLoadError, setListLoadError] = useState<string | null>(null);
+
   const [isMintOpen, setMintOpen] = useState(false);
   const [selectedKid, setSelectedKid] = useState<string | null>(null);
   const [mintedToken, setMintedToken] = useState<string | null>(null);
@@ -38,6 +43,7 @@ export const Keys = () => {
 
   const loadData = async () => {
     setIsLoading(true);
+    setListLoadError(null);
     try {
       const [keysData, clientsData] = await Promise.all([
         api.keys.list(filterClientId ? { client_id: filterClientId } : undefined),
@@ -48,8 +54,9 @@ export const Keys = () => {
       if (clientsData.length > 0 && !formData.client_id) {
         setFormData((prev) => ({ ...prev, client_id: clientsData[0].id }));
       }
-    } catch (e) {
+    } catch (e: unknown) {
       console.error(e);
+      setListLoadError(loadErrorMessage(e));
     } finally {
       setIsLoading(false);
     }
@@ -57,7 +64,7 @@ export const Keys = () => {
 
   useEffect(() => {
     loadData();
-  }, [filterClientId]);
+  }, [filterClientId, adminApiRetryEpoch]);
 
   const handleGenerate = async () => {
     setError(null);
@@ -184,6 +191,12 @@ export const Keys = () => {
         <tbody>
           {isLoading ? (
             <tr><Td colSpan={6} style={{ textAlign: 'center' }}>Loading keys...</Td></tr>
+          ) : listLoadError ? (
+            <tr>
+              <Td colSpan={6} style={{ padding: '24px 16px', verticalAlign: 'top' }}>
+                <DataLoadError message={listLoadError} onRetry={loadData} />
+              </Td>
+            </tr>
           ) : keys.length === 0 ? (
             <tr><Td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No keys found.</Td></tr>
           ) : (

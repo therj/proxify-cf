@@ -10,6 +10,9 @@ import nc from '../components/ui/nativeControls.module.css';
 import tableStyles from '../components/ui/Table.module.css';
 import { AuditEmptyIllustration } from '../components/empty/AuditEmptyIllustration';
 import { AdminPageTitle } from '../components/AdminPageTitle';
+import { useAdminApiRetryEpoch } from '../context/AdminApiRetryContext';
+import { DataLoadError } from '../components/DataLoadError';
+import { loadErrorMessage } from '../lib/loadErrorMessage';
 
 const FETCH_LIMIT = 200;
 
@@ -23,10 +26,15 @@ function formatAuditMeta(meta: string | null | undefined): string {
 }
 
 export const Audit = () => {
+  const adminApiRetryEpoch = useAdminApiRetryEpoch();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [actions, setActions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [metaError, setMetaError] = useState<string | null>(null);
+  const [metaRetryKey, setMetaRetryKey] = useState(0);
+  const [logsError, setLogsError] = useState<string | null>(null);
+  const [logsRetryKey, setLogsRetryKey] = useState(0);
 
   const [filterClientId, setFilterClientId] = useState('');
   const [filterAction, setFilterAction] = useState('');
@@ -79,25 +87,33 @@ export const Audit = () => {
   }, [targetInput]);
 
   useEffect(() => {
-    const boot = async () => {
+    let cancelled = false;
+    (async () => {
       try {
         const [clientsData, actionsData] = await Promise.all([
           api.clients.list(),
           api.audit.actions(),
         ]);
-        setClients(clientsData);
-        setActions(actionsData);
-      } catch (e) {
+        if (!cancelled) {
+          setClients(clientsData);
+          setActions(actionsData);
+          setMetaError(null);
+        }
+      } catch (e: unknown) {
         console.error(e);
+        if (!cancelled) setMetaError(loadErrorMessage(e));
       }
+    })();
+    return () => {
+      cancelled = true;
     };
-    boot();
-  }, []);
+  }, [metaRetryKey, adminApiRetryEpoch]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setIsLoading(true);
+      setLogsError(null);
       try {
         const data = await api.audit.list({
           ...(filterClientId ? { client_id: filterClientId } : {}),
@@ -105,9 +121,16 @@ export const Audit = () => {
           ...(targetDebounced ? { target: targetDebounced } : {}),
           limit: FETCH_LIMIT,
         });
-        if (!cancelled) setLogs(data);
-      } catch (e) {
+        if (!cancelled) {
+          setLogs(data);
+          setLogsError(null);
+        }
+      } catch (e: unknown) {
         console.error(e);
+        if (!cancelled) {
+          setLogs([]);
+          setLogsError(loadErrorMessage(e));
+        }
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -115,7 +138,7 @@ export const Audit = () => {
     return () => {
       cancelled = true;
     };
-  }, [filterClientId, filterAction, targetDebounced]);
+  }, [filterClientId, filterAction, targetDebounced, logsRetryKey, adminApiRetryEpoch]);
 
   const clearFilters = () => {
     setFilterClientId('');
@@ -136,12 +159,23 @@ export const Audit = () => {
               setDetailLog(null);
               setSummaryOpen(true);
             }}
-            disabled={isLoading}
+            disabled={isLoading || logsError != null}
           >
             Summary
           </Button>
         }
       />
+
+      {metaError ? (
+        <div style={{ marginBottom: 16 }}>
+          <DataLoadError
+            variant="banner"
+            title="Audit filters"
+            message={`Client list or action types — ${metaError}`}
+            onRetry={() => setMetaRetryKey((k) => k + 1)}
+          />
+        </div>
+      ) : null}
 
       <Table
         className={tableStyles.tableFixed}
@@ -206,6 +240,12 @@ export const Audit = () => {
             <tr>
               <Td colSpan={5} style={{ textAlign: 'center' }}>
                 Loading audit logs...
+              </Td>
+            </tr>
+          ) : logsError ? (
+            <tr>
+              <Td colSpan={5} style={{ padding: '24px 16px', verticalAlign: 'top' }}>
+                <DataLoadError message={logsError} onRetry={() => setLogsRetryKey((k) => k + 1)} />
               </Td>
             </tr>
           ) : logs.length === 0 ? (

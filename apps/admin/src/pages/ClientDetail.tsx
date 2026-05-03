@@ -10,10 +10,14 @@ import { Client, ClientRouteGrant, IssuedToken, Key, Route } from '@proxify-cf/s
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { EntityAuditHistoryModal, type EntityAuditScope } from '../components/EntityAuditHistoryModal';
 import { AdminPageTitle } from '../components/AdminPageTitle';
+import { useAdminApiRetryEpoch } from '../context/AdminApiRetryContext';
+import { DataLoadError } from '../components/DataLoadError';
 import { formatDateTime } from '../lib/formatDateTime';
+import { loadErrorMessage } from '../lib/loadErrorMessage';
 
 export const ClientDetail = () => {
   const navigate = useNavigate();
+  const adminApiRetryEpoch = useAdminApiRetryEpoch();
   const { clientId } = useParams<{ clientId: string }>();
   const [clients, setClients] = useState<Client[]>([]);
   const [routes, setRoutes] = useState<Route[]>([]);
@@ -21,6 +25,7 @@ export const ClientDetail = () => {
   const [tokens, setTokens] = useState<IssuedToken[]>([]);
   const [grants, setGrants] = useState<ClientRouteGrant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const [editOpen, setEditOpen] = useState(false);
   const [editSaving, setEditSaving] = useState(false);
@@ -38,6 +43,7 @@ export const ClientDetail = () => {
   const loadAll = useCallback(async () => {
     if (!clientId) return;
     setLoading(true);
+    setLoadError(null);
     try {
       const [clientsData, routesData, keysData, tokensData, grantsData] = await Promise.all([
         api.clients.list(),
@@ -51,12 +57,13 @@ export const ClientDetail = () => {
       setKeys(keysData);
       setTokens(tokensData);
       setGrants(grantsData);
-    } catch (e) {
+    } catch (e: unknown) {
       console.error(e);
+      setLoadError(loadErrorMessage(e));
     } finally {
       setLoading(false);
     }
-  }, [clientId]);
+  }, [clientId, adminApiRetryEpoch]);
 
   useEffect(() => {
     loadAll();
@@ -110,7 +117,20 @@ export const ClientDetail = () => {
     return <p style={{ color: 'var(--text-secondary)' }}>Invalid client.</p>;
   }
 
-  if (!loading && !client) {
+  if (!loading && loadError) {
+    return (
+      <div>
+        <Link to="/admin/clients" style={{ color: 'var(--accent-primary)', fontSize: 14 }}>
+          ← Back to Clients
+        </Link>
+        <div style={{ marginTop: 24 }}>
+          <DataLoadError message={loadError} onRetry={loadAll} />
+        </div>
+      </div>
+    );
+  }
+
+  if (!loading && !loadError && !client) {
     return (
       <div>
         <Link to="/admin/clients" style={{ color: 'var(--accent-primary)', fontSize: 14 }}>

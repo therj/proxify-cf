@@ -8,6 +8,7 @@ import { AuditLog, AccessLog, Client } from '@proxify-cf/shared';
 import { formatAuditSummary, effectiveClientId } from '../lib/auditDisplay';
 import { formatDateTime } from '../lib/formatDateTime';
 import { AdminPageTitle } from '../components/AdminPageTitle';
+import { useAdminApiRetryEpoch } from '../context/AdminApiRetryContext';
 
 const DASHBOARD_ACCESS_LIMIT = 50;
 const DASHBOARD_AUDIT_LIMIT = 10;
@@ -50,6 +51,7 @@ const metricLinkStyle: React.CSSProperties = {
 
 export const Dashboard = () => {
   const navigate = useNavigate();
+  const adminApiRetryEpoch = useAdminApiRetryEpoch();
   const [metrics, setMetrics] = useState<DashboardMetric[]>([
     { label: 'Total Clients', value: '…', icon: Users, color: '#a5b4fc', to: '/admin/clients' },
     { label: 'Active Routes', value: '…', icon: Route, color: '#86efac', to: '/admin/routes' },
@@ -62,11 +64,15 @@ export const Dashboard = () => {
   const [recentAccess, setRecentAccess] = useState<AccessLog[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [auditPreviewFailed, setAuditPreviewFailed] = useState(false);
+  const [accessPreviewFailed, setAccessPreviewFailed] = useState(false);
 
   const nameById = useMemo(() => new Map(clients.map((c) => [c.id, c.name])), [clients]);
 
-  const accessSeeMore = !isLoading && recentAccess.length >= DASHBOARD_ACCESS_LIMIT;
-  const auditSeeMore = !isLoading && recentActivity.length >= DASHBOARD_AUDIT_LIMIT;
+  const accessSeeMore =
+    !isLoading && !accessPreviewFailed && recentAccess.length >= DASHBOARD_ACCESS_LIMIT;
+  const auditSeeMore =
+    !isLoading && !auditPreviewFailed && recentActivity.length >= DASHBOARD_AUDIT_LIMIT;
 
   useEffect(() => {
     const loadDashboard = async () => {
@@ -82,14 +88,23 @@ export const Dashboard = () => {
         api.audit.count(),
       ]);
 
-      const clientsList = results[0].status === 'fulfilled' ? results[0].value : [];
-      const routes = results[1].status === 'fulfilled' ? results[1].value : [];
-      const signingKeys = results[2].status === 'fulfilled' ? results[2].value : [];
-      const tokens = results[3].status === 'fulfilled' ? results[3].value : [];
-      const accessRows = results[4].status === 'fulfilled' ? results[4].value : [];
-      const audit = results[5].status === 'fulfilled' ? results[5].value : [];
-      const accessTotal = results[6].status === 'fulfilled' ? results[6].value : null;
-      const auditTotal = results[7].status === 'fulfilled' ? results[7].value : null;
+      const r0 = results[0];
+      const r1 = results[1];
+      const r2 = results[2];
+      const r3 = results[3];
+      const r4 = results[4];
+      const r5 = results[5];
+      const r6 = results[6];
+      const r7 = results[7];
+
+      const clientsList = r0.status === 'fulfilled' ? r0.value : [];
+      const routes = r1.status === 'fulfilled' ? r1.value : [];
+      const signingKeys = r2.status === 'fulfilled' ? r2.value : [];
+      const tokens = r3.status === 'fulfilled' ? r3.value : [];
+      const accessRows = r4.status === 'fulfilled' ? r4.value : [];
+      const audit = r5.status === 'fulfilled' ? r5.value : [];
+      const accessTotal = r6.status === 'fulfilled' ? r6.value : null;
+      const auditTotal = r7.status === 'fulfilled' ? r7.value : null;
 
       results.forEach((r, i) => {
         if (r.status === 'rejected') {
@@ -97,47 +112,53 @@ export const Dashboard = () => {
         }
       });
 
+      setAuditPreviewFailed(r5.status === 'rejected');
+      setAccessPreviewFailed(r4.status === 'rejected');
+
       setClients(clientsList);
+
+      const countOrDash = (r: PromiseSettledResult<number>, n: number | null) =>
+        r.status === 'fulfilled' && n != null ? String(n) : '—';
 
       setMetrics([
         {
           label: 'Total Clients',
-          value: String(clientsList.length),
+          value: r0.status === 'fulfilled' ? String(clientsList.length) : '—',
           icon: Users,
           color: '#a5b4fc',
           to: '/admin/clients',
         },
         {
           label: 'Active Routes',
-          value: String(routes.length),
+          value: r1.status === 'fulfilled' ? String(routes.length) : '—',
           icon: Route,
           color: '#86efac',
           to: '/admin/routes',
         },
         {
           label: 'Signing keys',
-          value: String(signingKeys.length),
+          value: r2.status === 'fulfilled' ? String(signingKeys.length) : '—',
           icon: Key,
           color: '#c4b5fd',
           to: '/admin/keys',
         },
         {
           label: 'Issued JWTs',
-          value: String(tokens.length),
+          value: r3.status === 'fulfilled' ? String(tokens.length) : '—',
           icon: KeyRound,
           color: '#fca5a5',
           to: '/admin/keys',
         },
         {
           label: 'Audit Logs',
-          value: auditTotal != null ? String(auditTotal) : '—',
+          value: countOrDash(r7, auditTotal),
           icon: Activity,
           color: '#fde047',
           to: '/admin/audit',
         },
         {
           label: 'Access Logs',
-          value: accessTotal != null ? String(accessTotal) : '—',
+          value: countOrDash(r6, accessTotal),
           icon: ScrollText,
           color: '#93c5fd',
           to: '/admin/access',
@@ -149,7 +170,7 @@ export const Dashboard = () => {
       setIsLoading(false);
     };
     loadDashboard();
-  }, []);
+  }, [adminApiRetryEpoch]);
 
   const listCardScroll: React.CSSProperties = {
     maxHeight: 'min(60vh, 520px)',
@@ -202,6 +223,10 @@ export const Dashboard = () => {
         <Card style={{ marginTop: 0, ...listCardScroll }}>
           {isLoading ? (
             <div style={{ color: 'var(--text-secondary)' }}>Loading...</div>
+          ) : auditPreviewFailed ? (
+            <div style={{ color: 'var(--text-secondary)' }}>
+              Could not load this preview (request failed). Open Audit Logs to retry.
+            </div>
           ) : recentActivity.length === 0 ? (
             <div style={{ color: 'var(--text-secondary)' }}>No admin activity in the last 7 days.</div>
           ) : (
@@ -286,6 +311,10 @@ export const Dashboard = () => {
         <Card style={{ marginTop: 0, ...listCardScroll }}>
           {isLoading ? (
             <div style={{ color: 'var(--text-secondary)' }}>Loading...</div>
+          ) : accessPreviewFailed ? (
+            <div style={{ color: 'var(--text-secondary)' }}>
+              Could not load this preview (request failed). Open Access Logs to retry.
+            </div>
           ) : recentAccess.length === 0 ? (
             <div style={{ color: 'var(--text-secondary)' }}>No proxied traffic in the last 7 days.</div>
           ) : (
