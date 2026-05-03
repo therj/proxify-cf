@@ -59,6 +59,8 @@
 				"CF_ACCESS_TEAM_DOMAIN": "",
 				"CF_ACCESS_AUD": "",
 				"LOCAL_ADMIN_EMAIL": "",
+				// Optional comma-separated hosts: suppress access_log rows for outcome no_route only (wrong-path noise still skipped when host has zero D1 routes).
+				"ACCESS_LOG_OMIT_NO_ROUTE_HOSTS": "",
 			},
 
 			// D1: `database_name` must match `wrangler d1 migrations apply <name> --env dev`.
@@ -104,6 +106,7 @@
 				"CF_ACCESS_TEAM_DOMAIN": "",
 				"CF_ACCESS_AUD": "",
 				"LOCAL_ADMIN_EMAIL": "mail@rjoshi.net",
+				"ACCESS_LOG_OMIT_NO_ROUTE_HOSTS": "",
 			},
 
 			"d1_databases": [

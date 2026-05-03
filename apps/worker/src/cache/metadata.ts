@@ -1,5 +1,5 @@
 import type { Key, Route } from '@proxify-cf/shared';
-import { findRouteForRequest, getRouteHeaders, normalizeIncomingHost } from '../repo/routes';
+import { findRouteForRequest, getRouteHeaders, hostHasAnyEnabledRoute, normalizeIncomingHost } from '../repo/routes';
 import { getKeyByKid, isIssuedTokenRevoked } from '../repo/keys';
 import { hasGrant } from '../repo/grants';
 import * as K from './keys';
@@ -31,6 +31,40 @@ export async function cachedFindRouteForRequest(
   const route = await findRouteForRequest(db, hostHeader, pathname);
   await kv.put(cacheKey, JSON.stringify(route), { expirationTtl: KV_CACHE_TTL_SEC });
   return route;
+}
+
+export async function cachedHostHasAnyEnabledRoute(
+  kv: KVNamespace,
+  db: D1Database,
+  cfgEpoch: number,
+  hostHeader: string
+): Promise<boolean> {
+  const host = normalizeIncomingHost(hostHeader);
+  const cacheKey = K.hostHasRoutesKey(cfgEpoch, host);
+  const hit = await kv.get(cacheKey, { type: 'text' });
+  if (hit === '1') return true;
+  if (hit === '0') return false;
+  const has = await hostHasAnyEnabledRoute(db, hostHeader);
+  await kv.put(cacheKey, has ? '1' : '0', { expirationTtl: KV_CACHE_TTL_SEC });
+  return has;
+}
+
+/** When false, skip access_log for no_route (SPA-only or explicitly omitted host). */
+export async function shouldLogNoRouteAccess(
+  kv: KVNamespace,
+  db: D1Database,
+  cfgEpoch: number,
+  hostHeader: string,
+  omitHostsCsv: string | undefined
+): Promise<boolean> {
+  const host = normalizeIncomingHost(hostHeader);
+  if (omitHostsCsv?.trim()) {
+    for (const part of omitHostsCsv.split(',')) {
+      const p = normalizeIncomingHost(part.trim());
+      if (p && p === host) return false;
+    }
+  }
+  return cachedHostHasAnyEnabledRoute(kv, db, cfgEpoch, hostHeader);
 }
 
 export async function cachedGetRouteHeaders(

@@ -12,6 +12,11 @@ export function routeLookupKey(cfgEpoch: number, host: string, pathname: string)
   return `${KV_PREFIX}:route:${cfgEpoch}:${host}:${pathname}`;
 }
 
+/** Cached boolean: whether D1 has any enabled route row for this host. */
+export function hostHasRoutesKey(cfgEpoch: number, host: string): string {
+  return `${KV_PREFIX}:host_routes:${cfgEpoch}:${host}`;
+}
+
 export function routeHeadersKey(cfgEpoch: number, routeId: string): string {
   return `${KV_PREFIX}:hdrs:${cfgEpoch}:${routeId}`;
 }

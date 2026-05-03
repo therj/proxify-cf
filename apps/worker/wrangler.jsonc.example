@@ -38,6 +38,7 @@
 				"CF_ACCESS_TEAM_DOMAIN": "",
 				"CF_ACCESS_AUD": "",
 				"LOCAL_ADMIN_EMAIL": "",
+				"ACCESS_LOG_OMIT_NO_ROUTE_HOSTS": "",
 			},
 
 			"d1_databases": [
@@ -71,6 +72,7 @@
 				"CF_ACCESS_TEAM_DOMAIN": "",
 				"CF_ACCESS_AUD": "",
 				"LOCAL_ADMIN_EMAIL": "",
+				"ACCESS_LOG_OMIT_NO_ROUTE_HOSTS": "",
 			},
 
 			"d1_databases": [

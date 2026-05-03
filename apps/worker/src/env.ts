@@ -6,4 +6,6 @@ export type Env = {
   LOCAL_ADMIN_EMAIL: string;
   KEK: string;
   ASSETS: Fetcher;
+  /** Comma-separated hosts: never append access_log for outcome no_route on these hosts. */
+  ACCESS_LOG_OMIT_NO_ROUTE_HOSTS?: string;
 };

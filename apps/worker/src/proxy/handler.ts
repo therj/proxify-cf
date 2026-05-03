@@ -9,6 +9,7 @@ import {
   cachedHasGrant,
   cachedGetRouteHeaders,
   cachedIsIssuedTokenRevoked,
+  shouldLogNoRouteAccess,
 } from '../cache/metadata';
 import { normalizeIncomingHost } from '../repo/routes';
 import { isClientEnabled } from '../repo/clients';
@@ -83,7 +84,16 @@ export const proxyHandler = async (c: Context<{ Bindings: Env }>, opts?: ProxyHa
   }
 
   if (!route) {
-    recordDenied({ method: incomingMethod, outcome: 'no_route', detail: { reason: 'no matching route' } });
+    const logNoRoute = await shouldLogNoRouteAccess(
+      kv,
+      c.env.DB,
+      cfgEpoch,
+      hostHeader,
+      c.env.ACCESS_LOG_OMIT_NO_ROUTE_HOSTS
+    );
+    if (logNoRoute) {
+      recordDenied({ method: incomingMethod, outcome: 'no_route', detail: { reason: 'no matching route' } });
+    }
     return jsonError(404, 'No route configured for this host and path');
   }
 

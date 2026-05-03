@@ -69,6 +69,16 @@ export async function findRouteForRequest(
   return rows[0];
 }
 
+/** True when at least one non-disabled route exists for this host (any path_prefix). */
+export async function hostHasAnyEnabledRoute(db: D1Database, hostHeader: string): Promise<boolean> {
+  const host = normalizeIncomingHost(hostHeader);
+  const row = await db
+    .prepare('SELECT 1 AS one FROM routes WHERE lower(host) = ?1 AND disabled_at IS NULL LIMIT 1')
+    .bind(host)
+    .first<{ one: number }>();
+  return row != null;
+}
+
 export async function createRoute(
   db: D1Database, 
   data: Omit<Route, 'id' | 'created_at' | 'disabled_at'>
