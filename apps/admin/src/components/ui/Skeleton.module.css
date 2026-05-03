@@ -1,0 +1,104 @@
+.bone {
+  display: block;
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    90deg,
+    var(--surface-hover) 0%,
+    rgba(148, 163, 184, 0.18) 42%,
+    rgba(148, 163, 184, 0.22) 50%,
+    rgba(148, 163, 184, 0.18) 58%,
+    var(--surface-hover) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.35s ease-in-out infinite;
+  border: 1px solid var(--surface-border);
+  box-sizing: border-box;
+}
+
+.bonePill {
+  border-radius: 999px;
+}
+
+@keyframes skeletonShimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bone {
+    animation: skeletonPulse 2s ease-in-out infinite;
+    background: var(--surface-hover);
+    background-size: auto;
+  }
+
+  @keyframes skeletonPulse {
+    0%,
+    100% {
+      opacity: 0.65;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+}
+
+.tablePlaceholder {
+  display: grid;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.placeholderCell {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--divider-subtle);
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  box-sizing: border-box;
+}
+
+.listRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--divider-subtle);
+  box-sizing: border-box;
+}
+
+.listRow:last-child {
+  border-bottom: none;
+}
+
+.listDot {
+  flex-shrink: 0;
+}
+
+.listMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.listMeta {
+  flex-shrink: 0;
+}
+
+.jsonStack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.stableSlot {
+  box-sizing: border-box;
+  width: 100%;
+}

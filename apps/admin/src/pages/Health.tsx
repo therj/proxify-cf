@@ -3,7 +3,10 @@ import clsx from 'clsx';
 import { Check, Copy } from 'lucide-react';
 import { JsonColored } from '../components/JsonColored';
 import { AdminPageTitle } from '../components/AdminPageTitle';
+import { JsonBlockSkeleton, Skeleton } from '../components/ui/Skeleton';
 import styles from './Health.module.css';
+
+const HEALTH_BODY_MIN_PX = 280;
 
 const JSON_ENDPOINT = '/api/health';
 
@@ -68,7 +71,7 @@ export const Health: React.FC = () => {
   const sameOriginUrl = `${origin}${JSON_ENDPOINT}`;
 
   const httpLine =
-    !loading && httpStatus != null ? formatHttpLine(httpStatus, httpStatusText) : loading ? '…' : '—';
+    !loading && httpStatus != null ? formatHttpLine(httpStatus, httpStatusText) : !loading ? '—' : null;
 
   const statusOk = !loading && !err && data != null && httpStatus != null && httpStatus >= 200 && httpStatus < 300;
   const statusBad = !loading && (err != null || (httpStatus != null && (httpStatus < 200 || httpStatus >= 300)));
@@ -91,7 +94,7 @@ export const Health: React.FC = () => {
             statusOk ? styles.apiBarStatusOk : statusBad ? styles.apiBarStatusBad : styles.apiBarStatusMuted
           }`}
         >
-          {httpLine}
+          {loading ? <Skeleton height={18} width={76} radius="pill" /> : httpLine}
         </div>
         <div className={styles.apiBarCode}>
           <div className={styles.apiBarRow}>
@@ -110,10 +113,11 @@ export const Health: React.FC = () => {
         </div>
       </div>
 
-      {loading && <p className={styles.muted}>Loading body…</p>}
-      {err && <p className={styles.err}>{err}</p>}
-
-      {!loading && !err && data && <JsonColored value={data} />}
+      <div style={{ minHeight: HEALTH_BODY_MIN_PX }}>
+        {loading ? <JsonBlockSkeleton lines={12} /> : null}
+        {err && !loading ? <p className={styles.err}>{err}</p> : null}
+        {!loading && !err && data ? <JsonColored value={data} /> : null}
+      </div>
     </div>
   );
 };

@@ -12,6 +12,7 @@ import { AuditEmptyIllustration } from '../components/empty/AuditEmptyIllustrati
 import { AdminPageTitle } from '../components/AdminPageTitle';
 import { useAdminApiRetryEpoch } from '../context/AdminApiRetryContext';
 import { DataLoadError } from '../components/DataLoadError';
+import { TableBodyStableSlot, TableSkeletonGrid } from '../components/ui/Skeleton';
 import { loadErrorMessage } from '../lib/loadErrorMessage';
 
 const FETCH_LIMIT = 200;
@@ -236,18 +237,18 @@ export const Audit = () => {
           </tr>
         </thead>
         <tbody>
-          {isLoading ? (
-            <tr>
-              <Td colSpan={5} style={{ textAlign: 'center' }}>
-                Loading audit logs...
-              </Td>
-            </tr>
-          ) : logsError ? (
-            <tr>
-              <Td colSpan={5} style={{ padding: '24px 16px', verticalAlign: 'top' }}>
-                <DataLoadError message={logsError} onRetry={() => setLogsRetryKey((k) => k + 1)} />
-              </Td>
-            </tr>
+          {isLoading || logsError ? (
+            <TableBodyStableSlot colSpan={5}>
+              {isLoading ? (
+                <TableSkeletonGrid columns={5} columnFr={[18, 14, 14, 18, 36]} />
+              ) : (
+                <DataLoadError
+                  layout="stretch"
+                  message={logsError!}
+                  onRetry={() => setLogsRetryKey((k) => k + 1)}
+                />
+              )}
+            </TableBodyStableSlot>
           ) : logs.length === 0 ? (
             <tr>
               <Td colSpan={5} style={{ padding: 0, borderBottom: 'none', verticalAlign: 'top' }}>

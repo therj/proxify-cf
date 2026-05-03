@@ -9,6 +9,7 @@ import { formatAuditSummary, effectiveClientId } from '../lib/auditDisplay';
 import { formatDateTime } from '../lib/formatDateTime';
 import { AdminPageTitle } from '../components/AdminPageTitle';
 import { useAdminApiRetryEpoch } from '../context/AdminApiRetryContext';
+import { DASHBOARD_PREVIEW_MIN_HEIGHT, ListRowSkeleton, Skeleton } from '../components/ui/Skeleton';
 
 const DASHBOARD_ACCESS_LIMIT = 50;
 const DASHBOARD_AUDIT_LIMIT = 10;
@@ -209,7 +210,9 @@ export const Dashboard = () => {
                 </div>
                 <div>
                   <div style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{m.label}</div>
-                  <div style={{ fontSize: 24, fontWeight: 600, marginTop: 4 }}>{m.value}</div>
+                  <div style={{ fontSize: 24, fontWeight: 600, marginTop: 4, minHeight: 32 }}>
+                    {isLoading ? <Skeleton height={28} width={48} radius="md" /> : m.value}
+                  </div>
                 </div>
               </div>
             </Card>
@@ -221,16 +224,28 @@ export const Dashboard = () => {
         <h3 style={{ marginBottom: 4 }}>Recent Admin Activity</h3>
         <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--text-secondary)' }}>Last 7 days</p>
         <Card style={{ marginTop: 0, ...listCardScroll }}>
-          {isLoading ? (
-            <div style={{ color: 'var(--text-secondary)' }}>Loading...</div>
-          ) : auditPreviewFailed ? (
-            <div style={{ color: 'var(--text-secondary)' }}>
-              Could not load this preview (request failed). Open Audit Logs to retry.
-            </div>
-          ) : recentActivity.length === 0 ? (
-            <div style={{ color: 'var(--text-secondary)' }}>No admin activity in the last 7 days.</div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          <div style={{ minHeight: DASHBOARD_PREVIEW_MIN_HEIGHT }}>
+            {isLoading ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                {Array.from({ length: 5 }, (_, i) => (
+                  <ListRowSkeleton key={i} />
+                ))}
+              </div>
+            ) : auditPreviewFailed ? (
+              <div
+                style={{
+                  color: 'var(--text-secondary)',
+                  fontSize: 14,
+                  lineHeight: 1.5,
+                  paddingTop: 8,
+                }}
+              >
+                Could not load this preview (request failed). Open Audit Logs to retry.
+              </div>
+            ) : recentActivity.length === 0 ? (
+              <div style={{ color: 'var(--text-secondary)', paddingTop: 8 }}>No admin activity in the last 7 days.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
               {recentActivity.map((activity, i) => {
                 const openRelatedDetail = () => {
                   if (activity.route_id) {
@@ -290,8 +305,9 @@ export const Dashboard = () => {
                   </div>
                 );
               })}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </Card>
         <div style={sectionFooterLinks}>
           {auditSeeMore ? (
@@ -309,16 +325,28 @@ export const Dashboard = () => {
         <h3 style={{ marginBottom: 4 }}>Recent Access Logs</h3>
         <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--text-secondary)' }}>Last 7 days</p>
         <Card style={{ marginTop: 0, ...listCardScroll }}>
-          {isLoading ? (
-            <div style={{ color: 'var(--text-secondary)' }}>Loading...</div>
-          ) : accessPreviewFailed ? (
-            <div style={{ color: 'var(--text-secondary)' }}>
-              Could not load this preview (request failed). Open Access Logs to retry.
-            </div>
-          ) : recentAccess.length === 0 ? (
-            <div style={{ color: 'var(--text-secondary)' }}>No proxied traffic in the last 7 days.</div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          <div style={{ minHeight: DASHBOARD_PREVIEW_MIN_HEIGHT }}>
+            {isLoading ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                {Array.from({ length: 5 }, (_, i) => (
+                  <ListRowSkeleton key={i} />
+                ))}
+              </div>
+            ) : accessPreviewFailed ? (
+              <div
+                style={{
+                  color: 'var(--text-secondary)',
+                  fontSize: 14,
+                  lineHeight: 1.5,
+                  paddingTop: 8,
+                }}
+              >
+                Could not load this preview (request failed). Open Access Logs to retry.
+              </div>
+            ) : recentAccess.length === 0 ? (
+              <div style={{ color: 'var(--text-secondary)', paddingTop: 8 }}>No proxied traffic in the last 7 days.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
               {recentAccess.map((ev, i) => (
                 <div
                   key={ev.id}
@@ -352,8 +380,9 @@ export const Dashboard = () => {
                   </div>
                 </div>
               ))}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </Card>
         <div style={sectionFooterLinks}>
           {accessSeeMore ? (

@@ -12,6 +12,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { AdminPageTitle } from '../components/AdminPageTitle';
 import { useAdminApiRetryEpoch } from '../context/AdminApiRetryContext';
 import { DataLoadError } from '../components/DataLoadError';
+import { TableBodyStableSlot, TableSkeletonGrid } from '../components/ui/Skeleton';
 import { loadErrorMessage } from '../lib/loadErrorMessage';
 export const Keys = () => {
   const navigate = useNavigate();
@@ -189,14 +190,14 @@ export const Keys = () => {
           </tr>
         </thead>
         <tbody>
-          {isLoading ? (
-            <tr><Td colSpan={6} style={{ textAlign: 'center' }}>Loading keys...</Td></tr>
-          ) : listLoadError ? (
-            <tr>
-              <Td colSpan={6} style={{ padding: '24px 16px', verticalAlign: 'top' }}>
-                <DataLoadError message={listLoadError} onRetry={loadData} />
-              </Td>
-            </tr>
+          {isLoading || listLoadError ? (
+            <TableBodyStableSlot colSpan={6}>
+              {isLoading ? (
+                <TableSkeletonGrid columns={6} rows={8} columnFr={[2, 2, 1, 1, 1, 1]} />
+              ) : (
+                <DataLoadError layout="stretch" message={listLoadError!} onRetry={loadData} />
+              )}
+            </TableBodyStableSlot>
           ) : keys.length === 0 ? (
             <tr><Td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No keys found.</Td></tr>
           ) : (

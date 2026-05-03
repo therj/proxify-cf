@@ -11,6 +11,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { AdminPageTitle } from '../components/AdminPageTitle';
 import { useAdminApiRetryEpoch } from '../context/AdminApiRetryContext';
 import { DataLoadError } from '../components/DataLoadError';
+import { TableBodyStableSlot, TableSkeletonGrid } from '../components/ui/Skeleton';
 import { formatDateTime } from '../lib/formatDateTime';
 import { loadErrorMessage } from '../lib/loadErrorMessage';
 export const Grants = () => {
@@ -174,14 +175,14 @@ export const Grants = () => {
           </tr>
         </thead>
         <tbody>
-          {isLoading ? (
-            <tr><Td colSpan={4} style={{ textAlign: 'center' }}>Loading grants...</Td></tr>
-          ) : listLoadError ? (
-            <tr>
-              <Td colSpan={4} style={{ padding: '24px 16px', verticalAlign: 'top' }}>
-                <DataLoadError message={listLoadError} onRetry={loadData} />
-              </Td>
-            </tr>
+          {isLoading || listLoadError ? (
+            <TableBodyStableSlot colSpan={4}>
+              {isLoading ? (
+                <TableSkeletonGrid columns={4} rows={8} columnFr={[24, 28, 26, 22]} />
+              ) : (
+                <DataLoadError layout="stretch" message={listLoadError!} onRetry={loadData} />
+              )}
+            </TableBodyStableSlot>
           ) : grants.length === 0 ? (
             <tr><Td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No grants found.</Td></tr>
           ) : (

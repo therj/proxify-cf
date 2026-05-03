@@ -12,6 +12,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { AdminPageTitle } from '../components/AdminPageTitle';
 import { useAdminApiRetryEpoch } from '../context/AdminApiRetryContext';
 import { DataLoadError } from '../components/DataLoadError';
+import { TableBodyStableSlot, TableSkeletonGrid } from '../components/ui/Skeleton';
 import { loadErrorMessage } from '../lib/loadErrorMessage';
 
 export const Routes = () => {
@@ -207,14 +208,14 @@ export const Routes = () => {
           </tr>
         </thead>
         <tbody>
-          {isLoading ? (
-            <tr><Td colSpan={4} style={{ textAlign: 'center' }}>Loading routes...</Td></tr>
-          ) : listLoadError ? (
-            <tr>
-              <Td colSpan={4} style={{ padding: '24px 16px', verticalAlign: 'top' }}>
-                <DataLoadError message={listLoadError} onRetry={loadRoutes} />
-              </Td>
-            </tr>
+          {isLoading || listLoadError ? (
+            <TableBodyStableSlot colSpan={4}>
+              {isLoading ? (
+                <TableSkeletonGrid columns={4} rows={8} columnFr={[3, 2, 4, 1]} />
+              ) : (
+                <DataLoadError layout="stretch" message={listLoadError!} onRetry={loadRoutes} />
+              )}
+            </TableBodyStableSlot>
           ) : routes.length === 0 ? (
             <tr><Td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No routes found.</Td></tr>
           ) : (

@@ -10,6 +10,7 @@ import tableStyles from '../components/ui/Table.module.css';
 import { AdminPageTitle } from '../components/AdminPageTitle';
 import { useAdminApiRetryEpoch } from '../context/AdminApiRetryContext';
 import { DataLoadError } from '../components/DataLoadError';
+import { TableBodyStableSlot, TableSkeletonGrid } from '../components/ui/Skeleton';
 import { formatDateTime } from '../lib/formatDateTime';
 import { loadErrorMessage } from '../lib/loadErrorMessage';
 
@@ -275,18 +276,18 @@ export const Access = () => {
           </tr>
         </thead>
         <tbody>
-          {isLoading ? (
-            <tr>
-              <Td colSpan={8} style={{ textAlign: 'center' }}>
-                Loading access logs...
-              </Td>
-            </tr>
-          ) : logsError ? (
-            <tr>
-              <Td colSpan={8} style={{ padding: '24px 16px', verticalAlign: 'top' }}>
-                <DataLoadError message={logsError} onRetry={() => setLogsRetryKey((k) => k + 1)} />
-              </Td>
-            </tr>
+          {isLoading || logsError ? (
+            <TableBodyStableSlot colSpan={8}>
+              {isLoading ? (
+                <TableSkeletonGrid columns={8} columnFr={[13, 17, 8, 16, 14, 15, 9, 8]} />
+              ) : (
+                <DataLoadError
+                  layout="stretch"
+                  message={logsError!}
+                  onRetry={() => setLogsRetryKey((k) => k + 1)}
+                />
+              )}
+            </TableBodyStableSlot>
           ) : logs.length === 0 ? (
             <tr>
               <Td colSpan={8} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>

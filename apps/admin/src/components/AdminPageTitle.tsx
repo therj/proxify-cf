@@ -17,7 +17,7 @@ const actionsStyle: CSSProperties = {
 };
 
 type AdminPageTitleProps = {
-  title: string;
+  title: ReactNode;
   /** Optional lines under the title (e.g. detail subtitle + id). */
   description?: ReactNode;
   actions?: ReactNode;
@@ -28,7 +28,7 @@ export function AdminPageTitle({ title, description, actions }: AdminPageTitlePr
   return (
     <div style={rowStyle}>
       <div style={{ minWidth: 0 }}>
-        <h2 style={{ margin: 0 }}>{title}</h2>
+        <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', minHeight: 36 }}>{title}</h2>
         {description != null ? <div style={{ marginTop: 8 }}>{description}</div> : null}
       </div>
       <div style={actionsStyle}>{actions ?? null}</div>

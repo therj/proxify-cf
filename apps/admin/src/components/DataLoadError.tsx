@@ -12,13 +12,16 @@ type Props = {
   variant?: 'panel' | 'banner';
   /** Overrides default heading (use for filter strips: short label only; put details in `message`) */
   title?: string;
+  /** Full width inside table stable slots — no max-width jump */
+  layout?: 'default' | 'stretch';
 };
 
 const DEFAULT_PANEL_TITLE = 'Load failed';
 const DEFAULT_BANNER_TITLE = 'Filters';
 
-export function DataLoadError({ message, onRetry, variant = 'panel', title }: Props) {
+export function DataLoadError({ message, onRetry, variant = 'panel', title, layout = 'default' }: Props) {
   const isBanner = variant === 'banner';
+  const stretch = layout === 'stretch';
   const heading = title ?? (isBanner ? DEFAULT_BANNER_TITLE : DEFAULT_PANEL_TITLE);
 
   if (isBanner) {
@@ -46,13 +49,13 @@ export function DataLoadError({ message, onRetry, variant = 'panel', title }: Pr
 
   return (
     <motion.div
-      className={styles.panelWrap}
+      className={clsx(styles.panelWrap, stretch && styles.panelWrapStretch)}
       role="alert"
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: stretch ? 0 : 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: stretch ? 0.2 : 0.28, ease: [0.22, 1, 0.36, 1] }}
     >
-      <div className={clsx('glass', styles.panel)}>
+      <div className={clsx('glass', styles.panel, stretch && styles.panelStretch)}>
         <div className={styles.iconWrap} aria-hidden>
           <WifiOff size={22} strokeWidth={2} />
         </div>

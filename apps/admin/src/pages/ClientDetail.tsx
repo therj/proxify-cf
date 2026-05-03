@@ -12,6 +12,7 @@ import { EntityAuditHistoryModal, type EntityAuditScope } from '../components/En
 import { AdminPageTitle } from '../components/AdminPageTitle';
 import { useAdminApiRetryEpoch } from '../context/AdminApiRetryContext';
 import { DataLoadError } from '../components/DataLoadError';
+import { Skeleton, TableBodyStableSlot, TableSkeletonGrid } from '../components/ui/Skeleton';
 import { formatDateTime } from '../lib/formatDateTime';
 import { loadErrorMessage } from '../lib/loadErrorMessage';
 
@@ -160,9 +161,20 @@ export const ClientDetail = () => {
       </div>
 
       <AdminPageTitle
-        title={loading ? '…' : client?.name ?? 'Client'}
+        title={
+          loading ? (
+            <Skeleton height={28} width={240} radius="md" ariaLabel="Loading client" />
+          ) : (
+            (client?.name ?? 'Client')
+          )
+        }
         description={
-          !loading && client ? (
+          loading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <Skeleton height={14} width="55%" radius="pill" />
+              <Skeleton height={12} width="72%" radius="pill" />
+            </div>
+          ) : client ? (
             <>
               <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 14 }}>{client.email}</p>
               <p style={{ margin: '8px 0 0', fontSize: 12, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
@@ -209,11 +221,9 @@ export const ClientDetail = () => {
           </thead>
           <tbody>
             {loading ? (
-              <tr>
-                <Td colSpan={5} style={{ textAlign: 'center' }}>
-                  Loading…
-                </Td>
-              </tr>
+              <TableBodyStableSlot colSpan={5}>
+                <TableSkeletonGrid columns={5} rows={6} columnFr={[2, 1, 1, 1, 1]} />
+              </TableBodyStableSlot>
             ) : keys.length === 0 ? (
               <tr>
                 <Td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
@@ -284,11 +294,9 @@ export const ClientDetail = () => {
           </thead>
           <tbody>
             {loading ? (
-              <tr>
-                <Td colSpan={5} style={{ textAlign: 'center' }}>
-                  Loading…
-                </Td>
-              </tr>
+              <TableBodyStableSlot colSpan={5}>
+                <TableSkeletonGrid columns={5} rows={5} columnFr={[1.2, 1, 1, 1, 1]} />
+              </TableBodyStableSlot>
             ) : tokens.length === 0 ? (
               <tr>
                 <Td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
@@ -354,11 +362,9 @@ export const ClientDetail = () => {
           </thead>
           <tbody>
             {loading ? (
-              <tr>
-                <Td colSpan={2} style={{ textAlign: 'center' }}>
-                  Loading…
-                </Td>
-              </tr>
+              <TableBodyStableSlot colSpan={2} minHeight="clamp(200px, 28vh, 360px)">
+                <TableSkeletonGrid columns={2} rows={6} columnFr={[3, 1]} />
+              </TableBodyStableSlot>
             ) : grants.length === 0 ? (
               <tr>
                 <Td colSpan={2} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>

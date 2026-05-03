@@ -9,6 +9,7 @@ import { Client, ClientRouteGrant, Route } from '@proxify-cf/shared';
 import { AdminPageTitle } from '../components/AdminPageTitle';
 import { useAdminApiRetryEpoch } from '../context/AdminApiRetryContext';
 import { DataLoadError } from '../components/DataLoadError';
+import { Skeleton, TableBodyStableSlot, TableSkeletonGrid } from '../components/ui/Skeleton';
 import { formatDateTime } from '../lib/formatDateTime';
 import { loadErrorMessage } from '../lib/loadErrorMessage';
 
@@ -103,9 +104,22 @@ export const RouteDetail = () => {
       </div>
 
       <AdminPageTitle
-        title={loading ? '…' : route ? routeLabel(route) : 'Route'}
+        title={
+          loading ? (
+            <Skeleton height={28} width={280} radius="md" ariaLabel="Loading route" />
+          ) : route ? (
+            routeLabel(route)
+          ) : (
+            'Route'
+          )
+        }
         description={
-          !loading && route ? (
+          loading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <Skeleton height={14} width="85%" radius="pill" />
+              <Skeleton height={12} width="50%" radius="pill" />
+            </div>
+          ) : route ? (
             <>
               <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)', wordBreak: 'break-all' }}>
                 Upstream: {route.upstream_url}
@@ -144,11 +158,9 @@ export const RouteDetail = () => {
           </thead>
           <tbody>
             {loading ? (
-              <tr>
-                <Td colSpan={2} style={{ textAlign: 'center' }}>
-                  Loading…
-                </Td>
-              </tr>
+              <TableBodyStableSlot colSpan={2} minHeight="clamp(200px, 28vh, 360px)">
+                <TableSkeletonGrid columns={2} rows={6} columnFr={[2, 1]} />
+              </TableBodyStableSlot>
             ) : grants.length === 0 ? (
               <tr>
                 <Td colSpan={2} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
@@ -176,30 +188,36 @@ export const RouteDetail = () => {
 
       <section style={{ marginBottom: 32 }}>
         <h3 style={{ margin: '0 0 12px', fontSize: 16 }}>Custom headers</h3>
-        {loading ? (
-          <p style={{ color: 'var(--text-secondary)' }}>Loading…</p>
-        ) : headers.length === 0 ? (
-          <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>No custom headers on this route.</p>
-        ) : (
-          <Table>
-            <thead>
+        <Table>
+          <thead>
+            <tr>
+              <Th>Name</Th>
+              <Th>Value</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <TableBodyStableSlot colSpan={2} minHeight="clamp(200px, 28vh, 360px)">
+                <TableSkeletonGrid columns={2} rows={5} columnFr={[1, 2]} />
+              </TableBodyStableSlot>
+            ) : headers.length === 0 ? (
               <tr>
-                <Th>Name</Th>
-                <Th>Value</Th>
+                <Td colSpan={2} style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: 14 }}>
+                  No custom headers on this route.
+                </Td>
               </tr>
-            </thead>
-            <tbody>
-              {headers.map((h, i) => (
+            ) : (
+              headers.map((h, i) => (
                 <tr key={h.id ?? `${h.header_name}-${i}`}>
                   <Td style={{ fontWeight: 500 }}>{h.header_name}</Td>
                   <Td style={{ fontFamily: 'monospace', fontSize: 13, wordBreak: 'break-all' }}>
                     {h.header_value}
                   </Td>
                 </tr>
-              ))}
-            </tbody>
-          </Table>
-        )}
+              ))
+            )}
+          </tbody>
+        </Table>
         <p style={{ marginTop: 12, fontSize: 13, color: 'var(--text-secondary)' }}>
           To add or change headers, use <Link to="/admin/routes">Routes</Link> and edit this route.
         </p>
