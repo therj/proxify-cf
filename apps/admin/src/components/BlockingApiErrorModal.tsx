@@ -47,8 +47,8 @@ export function BlockingApiErrorModal({ open, title, message, variant, onTryAgai
                 {variant === 'session' ? (
                   <>
                     <p>
-                      Sign-in may not have finished (e.g. Cloudflare Access). Use <strong>Reload page</strong> for a full
-                      navigation; <strong>Try again</strong> only repeats API calls.
+                      Sign-in might still be in progress (for example Cloudflare Access). <strong>Reload page</strong> runs a
+                      full navigation; <strong>Try again</strong> only retries API calls.
                     </p>
                     <p className={styles.demoBlock}>
                       Demo:{' '}
@@ -58,9 +58,9 @@ export function BlockingApiErrorModal({ open, title, message, variant, onTryAgai
                     </p>
                   </>
                 ) : variant === 'server' ? (
-                  <p>Got HTML or non-JSON from the server. Try again or reload.</p>
+                  <p>The server sent HTML or something that isn’t JSON. Try again or reload.</p>
                 ) : (
-                  <p>Request didn’t finish (network / DNS / proxy). Check connectivity, then try again or reload.</p>
+                  <p>The request didn’t finish (network, DNS, or a proxy). Check your connection, then try again or reload.</p>
                 )}
                 {message.trim() ? <div className={styles.detail}>{message}</div> : null}
               </div>

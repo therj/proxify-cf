@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Table, Th, Td } from '../components/ui/Table';
 import { Button } from '../components/ui/Button';
@@ -12,7 +12,8 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { AdminPageTitle } from '../components/AdminPageTitle';
 import { useAdminApiRetryEpoch } from '../context/AdminApiRetryContext';
 import { DataLoadError } from '../components/DataLoadError';
-import { TableBodyStableSlot, TableSkeletonGrid } from '../components/ui/Skeleton';
+import { InlineSpinner } from '../components/ui/InlineSpinner';
+import { TableBodyStableSlot } from '../components/ui/Skeleton';
 import { loadErrorMessage } from '../lib/loadErrorMessage';
 export const Keys = () => {
   const navigate = useNavigate();
@@ -136,6 +137,15 @@ export const Keys = () => {
 
   const filterClientName = filterClientId ? clients.find((c) => c.id === filterClientId)?.name : null;
 
+  const generateTargetClient = useMemo(
+    () => clients.find((c) => c.id === formData.client_id),
+    [clients, formData.client_id]
+  );
+  const isGenerateClientDisabled = generateTargetClient?.disabled_at != null;
+  const isFilteredClientDisabled = Boolean(
+    filterClientId && clients.find((c) => c.id === filterClientId)?.disabled_at != null
+  );
+
   return (
     <div>
       {filterClientId ? (
@@ -168,6 +178,8 @@ export const Keys = () => {
         title="Keys & Tokens"
         actions={
           <Button
+            title={isFilteredClientDisabled ? 'Enable this client before creating new keys.' : undefined}
+            disabled={isFilteredClientDisabled}
             onClick={() => {
               if (filterClientId) setFormData((prev) => ({ ...prev, client_id: filterClientId }));
               setGenerateOpen(true);
@@ -193,7 +205,7 @@ export const Keys = () => {
           {isLoading || listLoadError ? (
             <TableBodyStableSlot colSpan={6}>
               {isLoading ? (
-                <TableSkeletonGrid columns={6} rows={8} columnFr={[2, 2, 1, 1, 1, 1]} />
+                <InlineSpinner />
               ) : (
                 <DataLoadError layout="stretch" message={listLoadError!} onRetry={loadData} />
               )}
@@ -202,6 +214,8 @@ export const Keys = () => {
             <tr><Td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No keys found.</Td></tr>
           ) : (
             keys.map((k) => {
+              const keyClient = clients.find((c) => c.id === k.client_id);
+              const mintBlockedByClient = keyClient?.disabled_at != null;
               const openClient = () => navigate(`/admin/clients/${k.client_id}`);
               return (
                 <tr
@@ -244,9 +258,12 @@ export const Keys = () => {
                             variant="secondary"
                             size="sm"
                             type="button"
-                            onClick={k.mode === 'server_issued' ? () => openMintModal(k.kid) : undefined}
-                            disabled={k.mode !== 'server_issued'}
-                            tabIndex={k.mode === 'server_issued' ? undefined : -1}
+                            onClick={
+                              k.mode === 'server_issued' && !mintBlockedByClient ? () => openMintModal(k.kid) : undefined
+                            }
+                            disabled={k.mode !== 'server_issued' || mintBlockedByClient}
+                            title={mintBlockedByClient ? 'Client is disabled; enable the client to mint JWTs.' : undefined}
+                            tabIndex={k.mode === 'server_issued' && !mintBlockedByClient ? undefined : -1}
                             aria-hidden={k.mode !== 'server_issued' || undefined}
                             style={
                               k.mode !== 'server_issued'
@@ -287,6 +304,11 @@ export const Keys = () => {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {error && <div style={{ color: 'var(--accent-danger)', fontSize: 14 }}>{error}</div>}
+            {isGenerateClientDisabled ? (
+              <p style={{ margin: 0, fontSize: 14, color: 'var(--accent-danger)' }}>
+                This client is disabled. Choose another client or re-enable the client before generating a key.
+              </p>
+            ) : null}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <label style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Client</label>
               <select
@@ -294,7 +316,12 @@ export const Keys = () => {
                 value={formData.client_id}
                 onChange={(e) => setFormData({ ...formData, client_id: e.target.value })}
               >
-                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                    {c.disabled_at != null ? ' (disabled)' : ''}
+                  </option>
+                ))}
               </select>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -309,8 +336,12 @@ export const Keys = () => {
               </select>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 16 }}>
-              <Button variant="secondary" onClick={() => setGenerateOpen(false)} disabled={isGenerating}>Cancel</Button>
-              <Button onClick={handleGenerate} isLoading={isGenerating}>Generate</Button>
+              <Button variant="secondary" onClick={() => setGenerateOpen(false)} disabled={isGenerating}>
+                Cancel
+              </Button>
+              <Button onClick={handleGenerate} isLoading={isGenerating} disabled={isGenerateClientDisabled}>
+                Generate
+              </Button>
             </div>
           </div>
         )}

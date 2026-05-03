@@ -1,0 +1,34 @@
+.root {
+  display: inline-block;
+  flex-shrink: 0;
+  border-style: solid;
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+  border-color: var(--surface-border);
+  border-top-color: var(--accent-primary);
+  box-sizing: border-box;
+}
+
+.sm {
+  width: 18px;
+  height: 18px;
+  border-width: 2px;
+}
+
+.md {
+  width: 24px;
+  height: 24px;
+  border-width: 2px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root {
+    animation-duration: 1.4s;
+  }
+}

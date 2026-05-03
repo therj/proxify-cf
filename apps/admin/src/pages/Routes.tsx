@@ -12,7 +12,8 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { AdminPageTitle } from '../components/AdminPageTitle';
 import { useAdminApiRetryEpoch } from '../context/AdminApiRetryContext';
 import { DataLoadError } from '../components/DataLoadError';
-import { TableBodyStableSlot, TableSkeletonGrid } from '../components/ui/Skeleton';
+import { InlineSpinner } from '../components/ui/InlineSpinner';
+import { TableBodyStableSlot } from '../components/ui/Skeleton';
 import { loadErrorMessage } from '../lib/loadErrorMessage';
 
 export const Routes = () => {
@@ -211,7 +212,7 @@ export const Routes = () => {
           {isLoading || listLoadError ? (
             <TableBodyStableSlot colSpan={4}>
               {isLoading ? (
-                <TableSkeletonGrid columns={4} rows={8} columnFr={[3, 2, 4, 1]} />
+                <InlineSpinner />
               ) : (
                 <DataLoadError layout="stretch" message={listLoadError!} onRetry={loadRoutes} />
               )}
@@ -268,7 +269,7 @@ export const Routes = () => {
           </div>
         }
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minHeight: 350 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div className={nc.tabBar}>
             <button
               type="button"

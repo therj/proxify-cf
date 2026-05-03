@@ -9,7 +9,8 @@ import { Client, ClientRouteGrant, Route } from '@proxify-cf/shared';
 import { AdminPageTitle } from '../components/AdminPageTitle';
 import { useAdminApiRetryEpoch } from '../context/AdminApiRetryContext';
 import { DataLoadError } from '../components/DataLoadError';
-import { Skeleton, TableBodyStableSlot, TableSkeletonGrid } from '../components/ui/Skeleton';
+import { InlineSpinner } from '../components/ui/InlineSpinner';
+import { TableBodyStableSlot } from '../components/ui/Skeleton';
 import { formatDateTime } from '../lib/formatDateTime';
 import { loadErrorMessage } from '../lib/loadErrorMessage';
 
@@ -106,7 +107,7 @@ export const RouteDetail = () => {
       <AdminPageTitle
         title={
           loading ? (
-            <Skeleton height={28} width={280} radius="md" ariaLabel="Loading route" />
+            <InlineSpinner size="sm" label="Loading route" />
           ) : route ? (
             routeLabel(route)
           ) : (
@@ -114,12 +115,7 @@ export const RouteDetail = () => {
           )
         }
         description={
-          loading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <Skeleton height={14} width="85%" radius="pill" />
-              <Skeleton height={12} width="50%" radius="pill" />
-            </div>
-          ) : route ? (
+          loading ? null : route ? (
             <>
               <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)', wordBreak: 'break-all' }}>
                 Upstream: {route.upstream_url}
@@ -158,8 +154,8 @@ export const RouteDetail = () => {
           </thead>
           <tbody>
             {loading ? (
-              <TableBodyStableSlot colSpan={2} minHeight="clamp(200px, 28vh, 360px)">
-                <TableSkeletonGrid columns={2} rows={6} columnFr={[2, 1]} />
+              <TableBodyStableSlot colSpan={2}>
+                <InlineSpinner />
               </TableBodyStableSlot>
             ) : grants.length === 0 ? (
               <tr>
@@ -197,8 +193,8 @@ export const RouteDetail = () => {
           </thead>
           <tbody>
             {loading ? (
-              <TableBodyStableSlot colSpan={2} minHeight="clamp(200px, 28vh, 360px)">
-                <TableSkeletonGrid columns={2} rows={5} columnFr={[1, 2]} />
+              <TableBodyStableSlot colSpan={2}>
+                <InlineSpinner />
               </TableBodyStableSlot>
             ) : headers.length === 0 ? (
               <tr>

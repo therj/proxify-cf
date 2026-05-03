@@ -1,4 +1,4 @@
-/* Dark — cool zinc/slate base (avoid flat “office grey”) */
+/* Dark - cool zinc/slate base (avoid flat “office grey”) */
 :root {
   color-scheme: dark;
   --bg-color: #09090b;
@@ -35,8 +35,8 @@
 
   --table-header-bg: transparent;
 
-  --modal-backdrop: rgba(0, 0, 0, 0.65);
-  --modal-backdrop-blur: blur(10px);
+  --modal-backdrop: rgba(0, 0, 0, 0.8);
+  --modal-backdrop-blur: blur(16px) saturate(120%);
   --modal-divider: var(--divider-subtle);
   /* Opaque panel so dialogs (e.g. audit summary) do not show page content through the shell */
   --modal-panel-bg: #18181b;
@@ -108,8 +108,8 @@
     --btn-secondary-border-hover: rgba(0, 0, 0, 0.18);
     --btn-filled-ring-hover: rgba(0, 0, 0, 0.14);
 
-    --modal-backdrop: rgba(15, 23, 42, 0.4);
-    --modal-backdrop-blur: blur(12px);
+    --modal-backdrop: rgba(15, 23, 42, 0.62);
+    --modal-backdrop-blur: blur(16px) saturate(120%);
     --modal-divider: rgba(148, 163, 184, 0.28);
     --modal-panel-bg: #fafafa;
     --modal-footer-bg: #fafafa;

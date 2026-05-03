@@ -10,7 +10,8 @@ import tableStyles from '../components/ui/Table.module.css';
 import { AdminPageTitle } from '../components/AdminPageTitle';
 import { useAdminApiRetryEpoch } from '../context/AdminApiRetryContext';
 import { DataLoadError } from '../components/DataLoadError';
-import { TableBodyStableSlot, TableSkeletonGrid } from '../components/ui/Skeleton';
+import { InlineSpinner } from '../components/ui/InlineSpinner';
+import { TableBodyStableSlot } from '../components/ui/Skeleton';
 import { formatDateTime } from '../lib/formatDateTime';
 import { loadErrorMessage } from '../lib/loadErrorMessage';
 
@@ -170,7 +171,7 @@ export const Access = () => {
           <DataLoadError
             variant="banner"
             title="Filter bar"
-            message={[refError && `Clients & routes — ${refError}`, keysError && `Signing keys — ${keysError}`]
+            message={[refError && `Clients & routes - ${refError}`, keysError && `Signing keys - ${keysError}`]
               .filter((line): line is string => Boolean(line))
               .join('\n')}
             onRetry={() => {
@@ -185,6 +186,7 @@ export const Access = () => {
         className={tableStyles.tableFixed}
         toolbar={
           <div className={tableStyles.filterStrip}>
+            <div className={tableStyles.filterStripFields}>
             <div className={`${tableStyles.filterStripField} ${tableStyles.filterStripClient}`}>
               <label className={nc.fieldLabel}>Client</label>
               <select className={nc.select} value={filterClientId} onChange={(e) => setFilterClientId(e.target.value)}>
@@ -245,6 +247,7 @@ export const Access = () => {
                 spellCheck={false}
               />
             </div>
+            </div>
             <div className={tableStyles.filterStripActions}>
               <Button variant="secondary" type="button" onClick={clearFilters}>
                 Clear filters
@@ -279,7 +282,7 @@ export const Access = () => {
           {isLoading || logsError ? (
             <TableBodyStableSlot colSpan={8}>
               {isLoading ? (
-                <TableSkeletonGrid columns={8} columnFr={[13, 17, 8, 16, 14, 15, 9, 8]} />
+                <InlineSpinner />
               ) : (
                 <DataLoadError
                   layout="stretch"
@@ -299,8 +302,8 @@ export const Access = () => {
               const openDetail = () => setDetailRow(row);
               const clientLabel = row.client_id
                 ? nameById.get(row.client_id) ?? `${row.client_id.slice(0, 8)}…`
-                : '—';
-              const routeLabel = row.route_id ? routeLabelById.get(row.route_id) ?? row.route_id.slice(0, 8) + '…' : '—';
+                : '-';
+              const routeLabel = row.route_id ? routeLabelById.get(row.route_id) ?? row.route_id.slice(0, 8) + '…' : '-';
               return (
                 <tr
                   key={row.id}
@@ -336,8 +339,8 @@ export const Access = () => {
                   </Td>
                   <Td>{clientLabel}</Td>
                   <Td style={{ fontSize: 13 }}>{routeLabel}</Td>
-                  <Td>{row.upstream_status ?? '—'}</Td>
-                  <Td style={{ fontVariantNumeric: 'tabular-nums' }}>{row.latency_ms ?? '—'}</Td>
+                  <Td>{row.upstream_status ?? '-'}</Td>
+                  <Td style={{ fontVariantNumeric: 'tabular-nums' }}>{row.latency_ms ?? '-'}</Td>
                 </tr>
               );
             })
@@ -399,19 +402,19 @@ export const Access = () => {
               <dd style={{ margin: 0 }}>
                 {detailRow.client_id
                   ? nameById.get(detailRow.client_id) ?? detailRow.client_id
-                  : '—'}
+                  : '-'}
               </dd>
               <dt style={{ color: 'var(--text-secondary)', margin: 0 }}>kid / jti</dt>
               <dd style={{ margin: 0, wordBreak: 'break-all', fontSize: 13 }}>
-                {detailRow.kid ?? '—'} / {detailRow.jti ?? '—'}
+                {detailRow.kid ?? '-'} / {detailRow.jti ?? '-'}
               </dd>
               <dt style={{ color: 'var(--text-secondary)', margin: 0 }}>Upstream status</dt>
-              <dd style={{ margin: 0 }}>{detailRow.upstream_status ?? '—'}</dd>
+              <dd style={{ margin: 0 }}>{detailRow.upstream_status ?? '-'}</dd>
               <dt style={{ color: 'var(--text-secondary)', margin: 0 }}>Latency</dt>
-              <dd style={{ margin: 0 }}>{detailRow.latency_ms != null ? `${detailRow.latency_ms} ms` : '—'}</dd>
+              <dd style={{ margin: 0 }}>{detailRow.latency_ms != null ? `${detailRow.latency_ms} ms` : '-'}</dd>
               <dt style={{ color: 'var(--text-secondary)', margin: 0 }}>Client IP</dt>
               <dd style={{ margin: 0, fontFamily: 'ui-monospace, monospace', fontSize: 13 }}>
-                {detailRow.client_ip ?? '—'}
+                {detailRow.client_ip ?? '-'}
               </dd>
             </dl>
             <div>

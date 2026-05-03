@@ -4,7 +4,7 @@ import { ExternalLink } from 'lucide-react';
 import { SiteBrand } from './SiteBrand';
 import styles from './LandingFooter.module.css';
 
-/** Site chrome footer for marketing/docs routes — admin console keeps its own sidebar. */
+/** Site chrome footer for marketing/docs routes - admin console keeps its own sidebar. */
 export const LandingFooter: React.FC = () => {
   return (
     <footer className={styles.footer}>
@@ -12,7 +12,7 @@ export const LandingFooter: React.FC = () => {
         <div className={styles.colBrand}>
           <SiteBrand variant="footer" />
           <p className={styles.tagline}>
-            Edge proxy control plane for Cloudflare Workers — routing, auth, and observability in one stack.
+            Edge proxy control plane for Cloudflare Workers - routing, auth, and observability in one stack.
           </p>
         </div>
 
@@ -61,7 +61,7 @@ export const LandingFooter: React.FC = () => {
           © {new Date().getFullYear()} Proxify CF. All rights reserved.
         </p>
         <nav className={styles.bottomNav} aria-label="Legal">
-          <span className={styles.note}>Deployed as a Cloudflare Worker — monitor routes and audit logs from the admin UI.</span>
+          <span className={styles.note}>Deployed as a Cloudflare Worker - monitor routes and audit logs from the admin UI.</span>
         </nav>
       </div>
     </footer>

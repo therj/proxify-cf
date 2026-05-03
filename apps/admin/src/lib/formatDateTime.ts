@@ -19,7 +19,7 @@ function toDate(ts: number | string | Date): Date {
   return new Date(ts);
 }
 
-/** e.g. 11.26am, 30 April — same style everywhere (Access, Audit, Dashboard, …). */
+/** e.g. 11.26am, 30 April - same style everywhere (Access, Audit, Dashboard, …). */
 export function formatDateTime(ts: number | string | Date): string {
   const d = toDate(ts);
   const h24 = d.getHours();

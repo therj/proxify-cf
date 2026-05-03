@@ -5,7 +5,8 @@ import { Table, Th, Td } from './ui/Table';
 import { api } from '../lib/api';
 import type { AuditLog, Client } from '@proxify-cf/shared';
 import { effectiveClientId, formatAuditSummary, formatAuditTimestamp } from '../lib/auditDisplay';
-import { TableBodyStableSlot, TableSkeletonGrid } from './ui/Skeleton';
+import { InlineSpinner } from './ui/InlineSpinner';
+import { TableBodyStableSlot } from './ui/Skeleton';
 
 const ENTITY_AUDIT_LIMIT = 100;
 
@@ -89,7 +90,7 @@ export const EntityAuditHistoryModal: React.FC<Props> = ({ isOpen, onClose, titl
             {subtitle}
           </p>
         ) : null}
-        <div style={{ minHeight: 360 }}>
+        <div>
           <Table>
             <thead>
               <tr>
@@ -102,8 +103,8 @@ export const EntityAuditHistoryModal: React.FC<Props> = ({ isOpen, onClose, titl
             </thead>
             <tbody>
               {loading ? (
-                <TableBodyStableSlot colSpan={5} minHeight="clamp(260px, 35vh, 400px)">
-                  <TableSkeletonGrid columns={5} columnFr={[18, 14, 14, 18, 36]} rows={8} />
+                <TableBodyStableSlot colSpan={5}>
+                  <InlineSpinner />
                 </TableBodyStableSlot>
               ) : logs.length === 0 ? (
                 <tr>
@@ -114,7 +115,7 @@ export const EntityAuditHistoryModal: React.FC<Props> = ({ isOpen, onClose, titl
               ) : (
                 logs.map((a) => {
                   const cid = effectiveClientId(a);
-                  const clientLabel = cid ? nameById.get(cid) ?? `${cid.slice(0, 8)}…` : '—';
+                  const clientLabel = cid ? nameById.get(cid) ?? `${cid.slice(0, 8)}…` : '-';
                   const summary = formatAuditSummary(a, nameById);
                   return (
                     <tr key={a.id}>

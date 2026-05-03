@@ -7,7 +7,7 @@
   letter-spacing: 0.05em;
 }
 
-/** Native selects / code fields — theme tokens (avoid inline dark-only rgba). */
+/** Native selects / code fields - theme tokens (avoid inline dark-only rgba). */
 .select {
   width: 100%;
   padding: 10px 14px;

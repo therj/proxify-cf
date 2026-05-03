@@ -25,7 +25,7 @@ function canonicalHref(pathname: string, search: string): string {
 
 function documentTitle(pathname: string): string {
   const p = normalizePathname(pathname);
-  if (p === '/') return `${BRAND} — Route traffic with confidence`;
+  if (p === '/') return `${BRAND} - Route traffic with confidence`;
   if (p === '/docs') return `Documentation · ${BRAND}`;
   if (p === '/health') return `Health · ${BRAND}`;
   if (matchPath({ path: '/admin/clients/:clientId', end: true }, p)) return `Client · ${BRAND}`;
@@ -43,7 +43,7 @@ function documentTitle(pathname: string): string {
 function metaDescription(pathname: string): string {
   const p = normalizePathname(pathname);
   if (p === '/docs') {
-    return 'Configure routes, clients, signing keys, JWTs, and grants on Proxify CF — documentation and API overview.';
+    return 'Configure routes, clients, signing keys, JWTs, and grants on Proxify CF - documentation and API overview.';
   }
   if (p === '/health') {
     return 'Read-only worker health checks for D1 and KV bindings on Proxify CF.';

@@ -5,7 +5,7 @@ import { Card } from '../components/ui/Card';
 import btnStyles from '../components/ui/Button.module.css';
 import styles from './Home.module.css';
 
-/** Full-width landing page — shared design tokens with the admin console. */
+/** Full-width landing page - shared design tokens with the admin console. */
 export const Home: React.FC = () => {
   return (
     <div className={styles.pageWrap}>
@@ -46,7 +46,7 @@ export const Home: React.FC = () => {
             Platform highlights
           </h2>
           <p className={styles.sectionSubtitle}>
-            Built for operators who need visibility and safe change paths—not a black-box edge.
+            Built for operators who need visibility and safe change paths, not a black-box edge.
           </p>
           <div className={styles.grid}>
             <Card className={styles.featureCard}>

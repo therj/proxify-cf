@@ -11,6 +11,7 @@ import {
   cachedIsIssuedTokenRevoked,
 } from '../cache/metadata';
 import { normalizeIncomingHost } from '../repo/routes';
+import { isClientEnabled } from '../repo/clients';
 import { appendAccessLog, type NewAccessLog } from '../repo/accessLog';
 import { buildOutboundHeaders, buildUpstreamRequestUrl } from './upstream';
 
@@ -163,6 +164,18 @@ export const proxyHandler = async (c: Context<{ Bindings: Env }>, opts?: ProxyHa
       outcome: 'missing_client_id',
     });
     return jsonError(403, 'JWT payload must include client_id');
+  }
+
+  const clientOk = await isClientEnabled(c.env.DB, clientId);
+  if (!clientOk) {
+    recordDenied({
+      method: incomingMethod,
+      route_id: route.id,
+      client_id: clientId,
+      kid,
+      outcome: 'client_disabled',
+    });
+    return jsonError(403, 'Client is disabled or unknown');
   }
 
   const jti = payload.jti && typeof payload.jti === 'string' ? payload.jti : null;

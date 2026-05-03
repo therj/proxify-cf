@@ -4,12 +4,12 @@ import { Card } from '../components/ui/Card';
 import type { LucideIcon } from 'lucide-react';
 import { Users, Route, Key, KeyRound, Activity, ScrollText } from 'lucide-react';
 import { api } from '../lib/api';
-import { AuditLog, AccessLog, Client } from '@proxify-cf/shared';
+import { AuditLog, AccessLog } from '@proxify-cf/shared';
 import { formatAuditSummary, effectiveClientId } from '../lib/auditDisplay';
 import { formatDateTime } from '../lib/formatDateTime';
 import { AdminPageTitle } from '../components/AdminPageTitle';
 import { useAdminApiRetryEpoch } from '../context/AdminApiRetryContext';
-import { DASHBOARD_PREVIEW_MIN_HEIGHT, ListRowSkeleton, Skeleton } from '../components/ui/Skeleton';
+import { InlineSpinner } from '../components/ui/InlineSpinner';
 
 const DASHBOARD_ACCESS_LIMIT = 50;
 const DASHBOARD_AUDIT_LIMIT = 10;
@@ -63,12 +63,12 @@ export const Dashboard = () => {
   ]);
   const [recentActivity, setRecentActivity] = useState<AuditLog[]>([]);
   const [recentAccess, setRecentAccess] = useState<AccessLog[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
+  const [clientLabels, setClientLabels] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [auditPreviewFailed, setAuditPreviewFailed] = useState(false);
   const [accessPreviewFailed, setAccessPreviewFailed] = useState(false);
 
-  const nameById = useMemo(() => new Map(clients.map((c) => [c.id, c.name])), [clients]);
+  const nameById = useMemo(() => new Map(Object.entries(clientLabels)), [clientLabels]);
 
   const accessSeeMore =
     !isLoading && !accessPreviewFailed && recentAccess.length >= DASHBOARD_ACCESS_LIMIT;
@@ -79,33 +79,21 @@ export const Dashboard = () => {
     const loadDashboard = async () => {
       const logSinceTs = Date.now() - DASHBOARD_LOG_WINDOW_MS;
       const results = await Promise.allSettled([
-        api.clients.list(),
-        api.routes.list(),
-        api.keys.list(),
-        api.keys.listTokens(),
+        api.dashboard.summary(),
+        api.clients.labels(),
         api.access.list({ limit: DASHBOARD_ACCESS_LIMIT, since: logSinceTs }),
         api.audit.list({ limit: DASHBOARD_AUDIT_LIMIT, since: logSinceTs }),
-        api.access.count(),
-        api.audit.count(),
       ]);
 
       const r0 = results[0];
       const r1 = results[1];
       const r2 = results[2];
       const r3 = results[3];
-      const r4 = results[4];
-      const r5 = results[5];
-      const r6 = results[6];
-      const r7 = results[7];
 
-      const clientsList = r0.status === 'fulfilled' ? r0.value : [];
-      const routes = r1.status === 'fulfilled' ? r1.value : [];
-      const signingKeys = r2.status === 'fulfilled' ? r2.value : [];
-      const tokens = r3.status === 'fulfilled' ? r3.value : [];
-      const accessRows = r4.status === 'fulfilled' ? r4.value : [];
-      const audit = r5.status === 'fulfilled' ? r5.value : [];
-      const accessTotal = r6.status === 'fulfilled' ? r6.value : null;
-      const auditTotal = r7.status === 'fulfilled' ? r7.value : null;
+      const summary = r0.status === 'fulfilled' ? r0.value : null;
+      const labels = r1.status === 'fulfilled' ? r1.value : {};
+      const accessRows = r2.status === 'fulfilled' ? r2.value : [];
+      const audit = r3.status === 'fulfilled' ? r3.value : [];
 
       results.forEach((r, i) => {
         if (r.status === 'rejected') {
@@ -113,53 +101,54 @@ export const Dashboard = () => {
         }
       });
 
-      setAuditPreviewFailed(r5.status === 'rejected');
-      setAccessPreviewFailed(r4.status === 'rejected');
+      setAuditPreviewFailed(r3.status === 'rejected');
+      setAccessPreviewFailed(r2.status === 'rejected');
 
-      setClients(clientsList);
+      setClientLabels(labels);
 
-      const countOrDash = (r: PromiseSettledResult<number>, n: number | null) =>
-        r.status === 'fulfilled' && n != null ? String(n) : '—';
+      const counts = summary?.counts;
+      const metricFromSummary = (n: number | undefined) =>
+        counts != null && n !== undefined ? String(n) : '-';
 
       setMetrics([
         {
           label: 'Total Clients',
-          value: r0.status === 'fulfilled' ? String(clientsList.length) : '—',
+          value: metricFromSummary(counts?.clients),
           icon: Users,
           color: '#a5b4fc',
           to: '/admin/clients',
         },
         {
           label: 'Active Routes',
-          value: r1.status === 'fulfilled' ? String(routes.length) : '—',
+          value: metricFromSummary(counts?.routes),
           icon: Route,
           color: '#86efac',
           to: '/admin/routes',
         },
         {
           label: 'Signing keys',
-          value: r2.status === 'fulfilled' ? String(signingKeys.length) : '—',
+          value: metricFromSummary(counts?.keys),
           icon: Key,
           color: '#c4b5fd',
           to: '/admin/keys',
         },
         {
           label: 'Issued JWTs',
-          value: r3.status === 'fulfilled' ? String(tokens.length) : '—',
+          value: metricFromSummary(counts?.issued_tokens),
           icon: KeyRound,
           color: '#fca5a5',
           to: '/admin/keys',
         },
         {
           label: 'Audit Logs',
-          value: countOrDash(r7, auditTotal),
+          value: metricFromSummary(counts?.audit_logs),
           icon: Activity,
           color: '#fde047',
           to: '/admin/audit',
         },
         {
           label: 'Access Logs',
-          value: countOrDash(r6, accessTotal),
+          value: metricFromSummary(counts?.access_logs),
           icon: ScrollText,
           color: '#93c5fd',
           to: '/admin/access',
@@ -172,11 +161,6 @@ export const Dashboard = () => {
     };
     loadDashboard();
   }, [adminApiRetryEpoch]);
-
-  const listCardScroll: React.CSSProperties = {
-    maxHeight: 'min(60vh, 520px)',
-    overflowY: 'auto',
-  };
 
   return (
     <div>
@@ -210,8 +194,8 @@ export const Dashboard = () => {
                 </div>
                 <div>
                   <div style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{m.label}</div>
-                  <div style={{ fontSize: 24, fontWeight: 600, marginTop: 4, minHeight: 32 }}>
-                    {isLoading ? <Skeleton height={28} width={48} radius="md" /> : m.value}
+                  <div style={{ fontSize: 24, fontWeight: 600, marginTop: 4 }}>
+                    {isLoading ? <InlineSpinner size="sm" /> : m.value}
                   </div>
                 </div>
               </div>
@@ -223,13 +207,11 @@ export const Dashboard = () => {
       <section style={{ marginBottom: 36 }}>
         <h3 style={{ marginBottom: 4 }}>Recent Admin Activity</h3>
         <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--text-secondary)' }}>Last 7 days</p>
-        <Card style={{ marginTop: 0, ...listCardScroll }}>
-          <div style={{ minHeight: DASHBOARD_PREVIEW_MIN_HEIGHT }}>
+        <Card style={{ marginTop: 0 }}>
+          <div>
             {isLoading ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                {Array.from({ length: 5 }, (_, i) => (
-                  <ListRowSkeleton key={i} />
-                ))}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', padding: 24 }}>
+                <InlineSpinner />
               </div>
             ) : auditPreviewFailed ? (
               <div
@@ -240,7 +222,7 @@ export const Dashboard = () => {
                   paddingTop: 8,
                 }}
               >
-                Could not load this preview (request failed). Open Audit Logs to retry.
+                Couldn’t load this section. Open Audit Logs for the full list.
               </div>
             ) : recentActivity.length === 0 ? (
               <div style={{ color: 'var(--text-secondary)', paddingTop: 8 }}>No admin activity in the last 7 days.</div>
@@ -324,13 +306,11 @@ export const Dashboard = () => {
       <section>
         <h3 style={{ marginBottom: 4 }}>Recent Access Logs</h3>
         <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--text-secondary)' }}>Last 7 days</p>
-        <Card style={{ marginTop: 0, ...listCardScroll }}>
-          <div style={{ minHeight: DASHBOARD_PREVIEW_MIN_HEIGHT }}>
+        <Card style={{ marginTop: 0 }}>
+          <div>
             {isLoading ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                {Array.from({ length: 5 }, (_, i) => (
-                  <ListRowSkeleton key={i} />
-                ))}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', padding: 24 }}>
+                <InlineSpinner />
               </div>
             ) : accessPreviewFailed ? (
               <div
@@ -341,7 +321,7 @@ export const Dashboard = () => {
                   paddingTop: 8,
                 }}
               >
-                Could not load this preview (request failed). Open Access Logs to retry.
+                Couldn’t load this section. Open Access Logs for the full list.
               </div>
             ) : recentAccess.length === 0 ? (
               <div style={{ color: 'var(--text-secondary)', paddingTop: 8 }}>No proxied traffic in the last 7 days.</div>

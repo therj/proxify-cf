@@ -8,11 +8,11 @@ import styles from './DataLoadError.module.css';
 type Props = {
   message: string;
   onRetry: () => void | Promise<void>;
-  /** Table / page body — larger card treatment */
+  /** Table / page body - larger card treatment */
   variant?: 'panel' | 'banner';
   /** Overrides default heading (use for filter strips: short label only; put details in `message`) */
   title?: string;
-  /** Full width inside table stable slots — no max-width jump */
+  /** Full width inside table stable slots - no max-width jump */
   layout?: 'default' | 'stretch';
 };
 
@@ -55,7 +55,9 @@ export function DataLoadError({ message, onRetry, variant = 'panel', title, layo
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: stretch ? 0.2 : 0.28, ease: [0.22, 1, 0.36, 1] }}
     >
-      <div className={clsx('glass', styles.panel, stretch && styles.panelStretch)}>
+      <div
+        className={clsx(styles.panel, stretch && styles.panelStretch, stretch && styles.panelFlush, !stretch && 'glass')}
+      >
         <div className={styles.iconWrap} aria-hidden>
           <WifiOff size={22} strokeWidth={2} />
         </div>

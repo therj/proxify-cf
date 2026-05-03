@@ -15,8 +15,18 @@ import {
   removeRouteHeader,
   getRouteById,
   getRouteHeaderContext,
+  countRoutes,
 } from '../repo/routes';
-import { getClients, createClient, updateClient, getClientById } from '../repo/clients';
+import {
+  getClients,
+  createClient,
+  updateClient,
+  getClientById,
+  countClients,
+  listClientLabels,
+  isClientEnabled,
+  deleteClient,
+} from '../repo/clients';
 import {
   getKeys,
   createKey,
@@ -26,6 +36,8 @@ import {
   revokeToken,
   getKeyByKid,
   getIssuedTokenByJti,
+  countKeys,
+  countIssuedTokens,
 } from '../repo/keys';
 import { getGrants, createGrant, revokeGrant } from '../repo/grants';
 import {
@@ -57,6 +69,27 @@ adminRoutes.post('/cache/purge', async (c) => {
     const result = await purgeCache(c.env.KV_BINDING, parsed.data.scope);
     await appendAudit(c.env.DB, 'admin', 'CACHE_PURGE', parsed.data.scope, result);
     return c.json({ data: result });
+  } catch (error) {
+    return c.json({ error: String(error) }, 500);
+  }
+});
+
+// --- Dashboard summary (all metric counts; no KV cache) ---
+adminRoutes.get('/dashboard/summary', async (c) => {
+  try {
+    const [clients, routes, keys, issued_tokens, audit_logs, access_logs] = await Promise.all([
+      countClients(c.env.DB),
+      countRoutes(c.env.DB),
+      countKeys(c.env.DB),
+      countIssuedTokens(c.env.DB),
+      countAuditLogs(c.env.DB),
+      countAccessLogs(c.env.DB),
+    ]);
+    return c.json({
+      data: {
+        counts: { clients, routes, keys, issued_tokens, audit_logs, access_logs },
+      },
+    });
   } catch (error) {
     return c.json({ error: String(error) }, 500);
   }
@@ -210,6 +243,16 @@ adminRoutes.delete('/routes/headers/:header_id', async (c) => {
 });
 
 // --- Clients API ---
+/** Id → name only (for audit previews, etc.); register before dynamic /clients/:id routes. */
+adminRoutes.get('/clients/labels', async (c) => {
+  try {
+    const labels = await listClientLabels(c.env.DB);
+    return c.json({ data: labels });
+  } catch (error) {
+    return c.json({ error: String(error) }, 500);
+  }
+});
+
 adminRoutes.get('/clients', async (c) => {
   try {
     const cfgEpoch = await getCfgEpoch(c.env.KV_BINDING);
@@ -266,6 +309,22 @@ adminRoutes.put('/clients/:id', async (c) => {
   }
 });
 
+adminRoutes.delete('/clients/:id', async (c) => {
+  try {
+    const id = c.req.param('id');
+    const before = await getClientById(c.env.DB, id);
+    if (!before) {
+      return c.json({ error: 'Client not found' }, 404);
+    }
+    await deleteClient(c.env.DB, id);
+    await appendAudit(c.env.DB, 'admin', 'DELETE_CLIENT', before.name, { id }, { client_id: id });
+    await bumpAfterProxyMutation(c.env.KV_BINDING);
+    return c.json({ success: true });
+  } catch (error) {
+    return c.json({ error: String(error) }, 500);
+  }
+});
+
 // --- Keys & issued tokens API ---
 adminRoutes.get('/keys', async (c) => {
   try {
@@ -284,6 +343,10 @@ adminRoutes.get('/keys', async (c) => {
 adminRoutes.post('/keys', async (c) => {
   try {
     const body = await c.req.json();
+    const client_id = body.client_id as string;
+    if (!client_id || !(await isClientEnabled(c.env.DB, client_id))) {
+      return c.json({ error: 'Client is missing or disabled' }, 400);
+    }
     const { key, privateJwk } = await createKey(c.env.DB, body, c.env.KEK);
     await appendAudit(c.env.DB, 'admin', 'CREATE_KEY', key.kid, {
       client_id: key.client_id,
@@ -334,6 +397,9 @@ adminRoutes.post('/keys/:kid/tokens', async (c) => {
     const kid = c.req.param('kid');
     const body = await c.req.json();
     const client_id = body.client_id as string;
+    if (!client_id || !(await isClientEnabled(c.env.DB, client_id))) {
+      return c.json({ error: 'Client is missing or disabled' }, 400);
+    }
     const label = (body.label as string) ?? 'token';
     const expires_in_days = (body.expires_in_days as number) ?? 30;
     const { token, issued } = await mintToken(
@@ -400,6 +466,9 @@ adminRoutes.get('/grants', async (c) => {
 adminRoutes.post('/grants', async (c) => {
   try {
     const body = await c.req.json();
+    if (!body.client_id || !(await isClientEnabled(c.env.DB, body.client_id as string))) {
+      return c.json({ error: 'Client is missing or disabled' }, 400);
+    }
     const grant = await createGrant(c.env.DB, body.client_id, body.route_id);
     const routes = await getRoutes(c.env.DB);
     const rt = routes.find((r) => r.id === body.route_id);
@@ -487,15 +556,6 @@ function parseAuditFilters(c: { req: { query: (k: string) => string | undefined 
 }
 
 // --- Access logs API (D1 only; not KV-cached) ---
-adminRoutes.get('/access/count', async (c) => {
-  try {
-    const n = await countAccessLogs(c.env.DB);
-    return c.json({ data: n });
-  } catch (error) {
-    return c.json({ error: String(error) }, 500);
-  }
-});
-
 adminRoutes.get('/access', async (c) => {
   try {
     const logs = await listAccessLogs(c.env.DB, parseAccessFilters(c));
@@ -506,15 +566,6 @@ adminRoutes.get('/access', async (c) => {
 });
 
 // --- Audit API ---
-adminRoutes.get('/audit/count', async (c) => {
-  try {
-    const n = await countAuditLogs(c.env.DB);
-    return c.json({ data: n });
-  } catch (error) {
-    return c.json({ error: String(error) }, 500);
-  }
-});
-
 adminRoutes.get('/audit/actions', async (c) => {
   try {
     const actions = await getDistinctAuditActions(c.env.DB);

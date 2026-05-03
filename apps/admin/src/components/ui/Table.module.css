@@ -76,10 +76,10 @@
   text-align: left;
 }
 
-/* Toolbar above table — same visual weight as .filterRow; widths decoupled from <colgroup> */
+/* Toolbar above table - same visual weight as .filterRow; widths decoupled from <colgroup> */
 .filterStrip {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: flex-end;
   gap: 12px 16px;
   padding: 12px 16px;
@@ -88,14 +88,25 @@
   text-align: left;
 }
 
+/* Equal-ish columns; auto-fit adds rows only when the row can’t fit another min-width track */
+.filterStripFields {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 112px), 1fr));
+  align-items: end;
+  gap: 12px 16px;
+}
+
 .filterStripField {
   display: flex;
   flex-direction: column;
   gap: 6px;
   min-width: 0;
+  width: 100%;
 }
 
-/* Match Audit’s former first-column (~18%) feel; not tied to Access timestamp col */
+/* Width hints for legacy filterRow tables only; inside .filterStripFields grid these are reset below */
 .filterStripClient {
   flex: 0 1 18%;
   min-width: 220px;
@@ -118,7 +129,15 @@
   min-width: 200px;
 }
 
+.filterStripFields .filterStripClient,
+.filterStripFields .filterStripGrow,
+.filterStripFields .filterStripNarrow,
+.filterStripFields .filterStripHostPath {
+  flex: unset;
+  min-width: 0;
+  max-width: none;
+}
+
 .filterStripActions {
   flex: 0 0 auto;
-  margin-left: auto;
 }

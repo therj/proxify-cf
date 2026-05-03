@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Table, Th, Td } from '../components/ui/Table';
 import { Button } from '../components/ui/Button';
@@ -11,7 +11,8 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { AdminPageTitle } from '../components/AdminPageTitle';
 import { useAdminApiRetryEpoch } from '../context/AdminApiRetryContext';
 import { DataLoadError } from '../components/DataLoadError';
-import { TableBodyStableSlot, TableSkeletonGrid } from '../components/ui/Skeleton';
+import { InlineSpinner } from '../components/ui/InlineSpinner';
+import { TableBodyStableSlot } from '../components/ui/Skeleton';
 import { formatDateTime } from '../lib/formatDateTime';
 import { loadErrorMessage } from '../lib/loadErrorMessage';
 export const Grants = () => {
@@ -32,6 +33,12 @@ export const Grants = () => {
   const [formData, setFormData] = useState({ client_id: '', route_id: '' });
 
   const [revokeTarget, setRevokeTarget] = useState<{ client_id: string; route_id: string } | null>(null);
+
+  const grantTargetClient = useMemo(
+    () => clients.find((c) => c.id === formData.client_id),
+    [clients, formData.client_id]
+  );
+  const isGrantClientDisabled = grantTargetClient?.disabled_at != null;
 
   const loadData = async () => {
     setIsLoading(true);
@@ -178,7 +185,7 @@ export const Grants = () => {
           {isLoading || listLoadError ? (
             <TableBodyStableSlot colSpan={4}>
               {isLoading ? (
-                <TableSkeletonGrid columns={4} rows={8} columnFr={[24, 28, 26, 22]} />
+                <InlineSpinner />
               ) : (
                 <DataLoadError layout="stretch" message={listLoadError!} onRetry={loadData} />
               )}
@@ -228,6 +235,11 @@ export const Grants = () => {
 
       <Modal isOpen={isModalOpen} onClose={() => setModalOpen(false)} title="Create Grant">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {isGrantClientDisabled ? (
+            <p style={{ margin: 0, fontSize: 14, color: 'var(--accent-danger)' }}>
+              This client is disabled. Choose another client or re-enable the client before creating a grant.
+            </p>
+          ) : null}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <label style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Client</label>
             <select
@@ -235,7 +247,12 @@ export const Grants = () => {
               value={formData.client_id}
               onChange={(e) => setFormData({ ...formData, client_id: e.target.value })}
             >
-              {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                  {c.disabled_at != null ? ' (disabled)' : ''}
+                </option>
+              ))}
             </select>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -250,7 +267,9 @@ export const Grants = () => {
           </div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 16 }}>
             <Button variant="secondary" onClick={() => setModalOpen(false)} disabled={isSaving}>Cancel</Button>
-            <Button onClick={handleCreate} isLoading={isSaving}>Grant Access</Button>
+            <Button onClick={handleCreate} isLoading={isSaving} disabled={isGrantClientDisabled}>
+              Grant Access
+            </Button>
           </div>
         </div>
       </Modal>

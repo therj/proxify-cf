@@ -36,7 +36,7 @@ async function fetchApi<T>(path: string, options?: RequestInit): Promise<T> {
       },
     });
   } catch {
-    notifyFatalApiError({ message: 'No network response.', variant: 'network' });
+    notifyFatalApiError({ message: 'The request never reached the server.', variant: 'network' });
     throw new Error('Network error');
   }
 
@@ -55,10 +55,10 @@ async function fetchApi<T>(path: string, options?: RequestInit): Promise<T> {
       notifyFatalApiError({
         message:
           variant === 'session'
-            ? 'Not JSON (often a login page).'
+            ? 'Expected JSON but got HTML (try signing in again).'
             : variant === 'server'
-              ? `HTTP ${response.status}, body wasn’t JSON.`
-              : 'Response wasn’t JSON.',
+              ? `Server returned HTTP ${response.status} with a non-JSON body.`
+              : 'The response was not valid JSON.',
         variant,
       });
       throw new SyntaxError('Invalid JSON');
@@ -84,7 +84,21 @@ async function fetchApi<T>(path: string, options?: RequestInit): Promise<T> {
   return json as T;
 }
 
+export type DashboardSummary = {
+  counts: {
+    clients: number;
+    routes: number;
+    keys: number;
+    issued_tokens: number;
+    audit_logs: number;
+    access_logs: number;
+  };
+};
+
 export const api = {
+  dashboard: {
+    summary: () => fetchApi<DashboardSummary>('/dashboard/summary'),
+  },
   routes: {
     list: () => fetchApi<Route[]>('/routes'),
     create: (data: Partial<Route>) => fetchApi<Route>('/routes', { method: 'POST', body: JSON.stringify(data) }),
@@ -103,8 +117,10 @@ export const api = {
   },
   clients: {
     list: () => fetchApi<Client[]>('/clients'),
+    labels: () => fetchApi<Record<string, string>>('/clients/labels'),
     create: (data: Partial<Client>) => fetchApi<Client>('/clients', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: Partial<Client>) => fetchApi<Client>(`/clients/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    remove: (id: string) => fetchApi<{ success: true }>(`/clients/${id}`, { method: 'DELETE' }),
   },
   keys: {
     list: (filters?: { client_id?: string }) => {
@@ -163,7 +179,6 @@ export const api = {
       const qs = q.toString();
       return fetchApi<AuditLog[]>(`/audit${qs ? `?${qs}` : ''}`);
     },
-    count: () => fetchApi<number>('/audit/count'),
     actions: () => fetchApi<string[]>('/audit/actions'),
   },
   access: {
@@ -191,6 +206,5 @@ export const api = {
       const qs = q.toString();
       return fetchApi<AccessLog[]>(`/access${qs ? `?${qs}` : ''}`);
     },
-    count: () => fetchApi<number>('/access/count'),
   },
 };

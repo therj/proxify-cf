@@ -5,6 +5,11 @@ export async function getRoutes(db: D1Database): Promise<Route[]> {
   return results;
 }
 
+export async function countRoutes(db: D1Database): Promise<number> {
+  const row = await db.prepare('SELECT COUNT(*) AS n FROM routes').first<{ n: number }>();
+  return Number(row?.n ?? 0);
+}
+
 export async function getRouteById(db: D1Database, id: string): Promise<Route | null> {
   const { results } = await db.prepare('SELECT * FROM routes WHERE id = ?1').bind(id).all<Route>();
   if (!results?.length) return null;

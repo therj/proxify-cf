@@ -80,6 +80,8 @@ export function formatAuditSummary(log: AuditLog, nameById: Map<string, string>)
         return `Revoked token "${meta.label}" · ${clientName}`;
       if (clientName) return `Revoked token · ${clientName}`;
       break;
+    case 'DELETE_CLIENT':
+      return `Deleted client "${log.target}"`;
     case 'CREATE_GRANT':
       return log.target || 'Access grant';
     case 'REVOKE_GRANT':

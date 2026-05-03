@@ -12,7 +12,8 @@ import { AuditEmptyIllustration } from '../components/empty/AuditEmptyIllustrati
 import { AdminPageTitle } from '../components/AdminPageTitle';
 import { useAdminApiRetryEpoch } from '../context/AdminApiRetryContext';
 import { DataLoadError } from '../components/DataLoadError';
-import { TableBodyStableSlot, TableSkeletonGrid } from '../components/ui/Skeleton';
+import { InlineSpinner } from '../components/ui/InlineSpinner';
+import { TableBodyStableSlot } from '../components/ui/Skeleton';
 import { loadErrorMessage } from '../lib/loadErrorMessage';
 
 const FETCH_LIMIT = 200;
@@ -55,7 +56,7 @@ export const Audit = () => {
     for (const a of logs) {
       byAction.set(a.action, (byAction.get(a.action) ?? 0) + 1);
       const cid = effectiveClientId(a);
-      const label = cid ? nameById.get(cid) ?? `${cid.slice(0, 8)}…` : '—';
+      const label = cid ? nameById.get(cid) ?? `${cid.slice(0, 8)}…` : '-';
       byClient.set(label, (byClient.get(label) ?? 0) + 1);
       const t = new Date(a.ts).getTime();
       if (!Number.isNaN(t)) {
@@ -172,7 +173,7 @@ export const Audit = () => {
           <DataLoadError
             variant="banner"
             title="Audit filters"
-            message={`Client list or action types — ${metaError}`}
+            message={`Client list or action types - ${metaError}`}
             onRetry={() => setMetaRetryKey((k) => k + 1)}
           />
         </div>
@@ -182,6 +183,7 @@ export const Audit = () => {
         className={tableStyles.tableFixed}
         toolbar={
           <div className={tableStyles.filterStrip}>
+            <div className={tableStyles.filterStripFields}>
             <div className={`${tableStyles.filterStripField} ${tableStyles.filterStripClient}`}>
               <label className={nc.fieldLabel}>Client</label>
               <select className={nc.select} value={filterClientId} onChange={(e) => setFilterClientId(e.target.value)}>
@@ -212,6 +214,7 @@ export const Audit = () => {
                 placeholder="Substring match on target field"
               />
             </div>
+            </div>
             <div className={tableStyles.filterStripActions}>
               <Button variant="secondary" type="button" onClick={clearFilters}>
                 Clear filters
@@ -240,7 +243,7 @@ export const Audit = () => {
           {isLoading || logsError ? (
             <TableBodyStableSlot colSpan={5}>
               {isLoading ? (
-                <TableSkeletonGrid columns={5} columnFr={[18, 14, 14, 18, 36]} />
+                <InlineSpinner />
               ) : (
                 <DataLoadError
                   layout="stretch"
@@ -286,7 +289,7 @@ export const Audit = () => {
           ) : (
             logs.map((a) => {
               const cid = effectiveClientId(a);
-              const clientLabel = cid ? nameById.get(cid) ?? cid.slice(0, 8) + '…' : '—';
+              const clientLabel = cid ? nameById.get(cid) ?? cid.slice(0, 8) + '…' : '-';
               const summary = formatAuditSummary(a, nameById);
               const openDetail = () => {
                 setSummaryOpen(false);
@@ -359,7 +362,7 @@ export const Audit = () => {
               <dd style={{ margin: 0, wordBreak: 'break-word' }}>
                 {(() => {
                   const cid = effectiveClientId(detailLog);
-                  return cid ? nameById.get(cid) ?? `${cid.slice(0, 8)}…` : '—';
+                  return cid ? nameById.get(cid) ?? `${cid.slice(0, 8)}…` : '-';
                 })()}
               </dd>
               <dt style={{ color: 'var(--text-secondary)', margin: 0 }}>Action</dt>
@@ -381,7 +384,7 @@ export const Audit = () => {
               <dd style={{ margin: 0 }}>{formatAuditTimestamp(detailLog.ts)}</dd>
               <dt style={{ color: 'var(--text-secondary)', margin: 0 }}>Target</dt>
               <dd style={{ margin: 0, wordBreak: 'break-word', fontFamily: 'ui-monospace, monospace', fontSize: 13 }}>
-                {detailLog.target || '—'}
+                {detailLog.target || '-'}
               </dd>
               <dt style={{ color: 'var(--text-secondary)', margin: 0 }}>Summary</dt>
               <dd style={{ margin: 0 }}>{formatAuditSummary(detailLog, nameById)}</dd>
@@ -454,7 +457,7 @@ export const Audit = () => {
               <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)' }}>
                 Time span in this view:{' '}
                 <span style={{ color: 'var(--text-primary)' }}>
-                  {formatAuditTimestamp(summaryStats.timeRange.start.getTime())} —{' '}
+                  {formatAuditTimestamp(summaryStats.timeRange.start.getTime())} -{' '}
                   {formatAuditTimestamp(summaryStats.timeRange.end.getTime())}
                 </span>
               </p>

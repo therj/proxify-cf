@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import nc from '../components/ui/nativeControls.module.css';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Table, Th, Td } from '../components/ui/Table';
@@ -12,7 +13,8 @@ import { EntityAuditHistoryModal, type EntityAuditScope } from '../components/En
 import { AdminPageTitle } from '../components/AdminPageTitle';
 import { useAdminApiRetryEpoch } from '../context/AdminApiRetryContext';
 import { DataLoadError } from '../components/DataLoadError';
-import { Skeleton, TableBodyStableSlot, TableSkeletonGrid } from '../components/ui/Skeleton';
+import { InlineSpinner } from '../components/ui/InlineSpinner';
+import { TableBodyStableSlot } from '../components/ui/Skeleton';
 import { formatDateTime } from '../lib/formatDateTime';
 import { loadErrorMessage } from '../lib/loadErrorMessage';
 
@@ -31,11 +33,14 @@ export const ClientDetail = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ name: '', email: '', description: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', description: '', disabled: false });
 
   const [auditModalScope, setAuditModalScope] = useState<EntityAuditScope | null>(null);
   const [revokeKid, setRevokeKid] = useState<string | null>(null);
   const [revokeJti, setRevokeJti] = useState<string | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteSaving, setDeleteSaving] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const client = useMemo(() => clients.find((c) => c.id === clientId), [clients, clientId]);
 
@@ -72,7 +77,12 @@ export const ClientDetail = () => {
 
   const openEdit = () => {
     if (!client) return;
-    setFormData({ name: client.name, email: client.email, description: client.description || '' });
+    setFormData({
+      name: client.name,
+      email: client.email,
+      description: client.description || '',
+      disabled: client.disabled_at != null,
+    });
     setEditError(null);
     setEditOpen(true);
   };
@@ -82,13 +92,33 @@ export const ClientDetail = () => {
     setEditSaving(true);
     setEditError(null);
     try {
-      await api.clients.update(clientId, formData);
+      await api.clients.update(clientId, {
+        name: formData.name,
+        email: formData.email,
+        description: formData.description || null,
+        disabled_at: formData.disabled ? Date.now() : null,
+      });
       setEditOpen(false);
       await loadAll();
     } catch (e: any) {
       setEditError(e.message);
     } finally {
       setEditSaving(false);
+    }
+  };
+
+  const confirmDeleteClient = async () => {
+    if (!clientId) return;
+    setDeleteSaving(true);
+    setDeleteError(null);
+    try {
+      await api.clients.remove(clientId);
+      setDeleteOpen(false);
+      navigate('/admin/clients');
+    } catch (e: unknown) {
+      setDeleteError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setDeleteSaving(false);
     }
   };
 
@@ -161,22 +191,18 @@ export const ClientDetail = () => {
       </div>
 
       <AdminPageTitle
-        title={
-          loading ? (
-            <Skeleton height={28} width={240} radius="md" ariaLabel="Loading client" />
-          ) : (
-            (client?.name ?? 'Client')
-          )
-        }
+        title={loading ? <InlineSpinner size="sm" label="Loading client" /> : (client?.name ?? 'Client')}
         description={
-          loading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <Skeleton height={14} width="55%" radius="pill" />
-              <Skeleton height={12} width="72%" radius="pill" />
-            </div>
-          ) : client ? (
+          loading ? null : client ? (
             <>
               <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 14 }}>{client.email}</p>
+              <p style={{ margin: '8px 0 0', fontSize: 13, color: 'var(--text-secondary)' }}>
+                Status:{' '}
+                <strong style={{ color: client.disabled_at != null ? 'var(--accent-danger)' : 'var(--text-primary)' }}>
+                  {client.disabled_at != null ? 'Disabled' : 'Active'}
+                </strong>
+                {client.disabled_at != null ? '. JWT access is denied until re-enabled.' : null}
+              </p>
               <p style={{ margin: '8px 0 0', fontSize: 12, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
                 {clientId}
               </p>
@@ -203,9 +229,37 @@ export const ClientDetail = () => {
             >
               Keys page (filtered)
             </Button>
+            <Button
+              variant="danger"
+              type="button"
+              onClick={() => {
+                setDeleteError(null);
+                setDeleteOpen(true);
+              }}
+              disabled={loading || !client}
+            >
+              Delete client
+            </Button>
           </>
         }
       />
+
+      {!loading && client?.disabled_at != null ? (
+        <p
+          style={{
+            margin: '0 0 20px',
+            padding: '12px 14px',
+            borderRadius: 8,
+            border: '1px solid var(--surface-border)',
+            background: 'var(--surface-bg)',
+            fontSize: 14,
+            color: 'var(--text-secondary)',
+          }}
+        >
+          This client is disabled. You cannot mint new JWTs or create signing keys until it is re-enabled (server will reject
+          those requests).
+        </p>
+      ) : null}
 
       <section style={{ marginBottom: 32 }}>
         <h3 style={{ margin: '0 0 12px', fontSize: 16 }}>Signing keys</h3>
@@ -222,7 +276,7 @@ export const ClientDetail = () => {
           <tbody>
             {loading ? (
               <TableBodyStableSlot colSpan={5}>
-                <TableSkeletonGrid columns={5} rows={6} columnFr={[2, 1, 1, 1, 1]} />
+                <InlineSpinner />
               </TableBodyStableSlot>
             ) : keys.length === 0 ? (
               <tr>
@@ -295,7 +349,7 @@ export const ClientDetail = () => {
           <tbody>
             {loading ? (
               <TableBodyStableSlot colSpan={5}>
-                <TableSkeletonGrid columns={5} rows={5} columnFr={[1.2, 1, 1, 1, 1]} />
+                <InlineSpinner />
               </TableBodyStableSlot>
             ) : tokens.length === 0 ? (
               <tr>
@@ -322,7 +376,7 @@ export const ClientDetail = () => {
                   >
                     <Td style={{ fontFamily: 'monospace', fontSize: 12 }}>{t.jti.slice(0, 12)}…</Td>
                     <Td style={{ fontFamily: 'monospace', fontSize: 12 }}>{t.kid.slice(0, 8)}…</Td>
-                    <Td>{t.label ?? '—'}</Td>
+                    <Td>{t.label ?? '-'}</Td>
                     <Td>{formatDateTime(t.expires_at)}</Td>
                     <Td>
                       <div onClick={(e) => e.stopPropagation()}>
@@ -362,8 +416,8 @@ export const ClientDetail = () => {
           </thead>
           <tbody>
             {loading ? (
-              <TableBodyStableSlot colSpan={2} minHeight="clamp(200px, 28vh, 360px)">
-                <TableSkeletonGrid columns={2} rows={6} columnFr={[3, 1]} />
+              <TableBodyStableSlot colSpan={2}>
+                <InlineSpinner />
               </TableBodyStableSlot>
             ) : grants.length === 0 ? (
               <tr>
@@ -431,6 +485,16 @@ export const ClientDetail = () => {
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           />
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 14 }}>
+            <input
+              type="checkbox"
+              className={nc.select}
+              style={{ width: 'auto', cursor: 'pointer' }}
+              checked={formData.disabled}
+              onChange={(e) => setFormData({ ...formData, disabled: e.target.checked })}
+            />
+            <span>Disabled (JWT access denied for this client)</span>
+          </label>
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 8 }}>
             <Button variant="secondary" type="button" onClick={() => setEditOpen(false)} disabled={editSaving}>
               Cancel
@@ -441,6 +505,26 @@ export const ClientDetail = () => {
           </div>
         </div>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={deleteOpen}
+        title="Delete client?"
+        message={
+          (client
+            ? `Delete "${client.name}" and all signing keys, issued JWTs, and route grants for this client? This cannot be undone.`
+            : 'Delete this client and all related keys, tokens, and grants? This cannot be undone.') + (deleteError ? `\n\n${deleteError}` : '')
+        }
+        confirmLabel="Delete client"
+        variant="danger"
+        isLoading={deleteSaving}
+        onCancel={() => {
+          if (!deleteSaving) {
+            setDeleteOpen(false);
+            setDeleteError(null);
+          }
+        }}
+        onConfirm={confirmDeleteClient}
+      />
 
       <ConfirmDialog
         isOpen={revokeKid !== null}

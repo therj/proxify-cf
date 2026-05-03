@@ -2,7 +2,7 @@ import readme from '../../../../README.md?raw';
 import development from '../../../../DEVELOPMENT.md?raw';
 import deploy from '../../../../DEPLOY.md?raw';
 
-/** Raw markdown from repo root — single source of truth with README.md, DEVELOPMENT.md, DEPLOY.md */
+/** Raw markdown from repo root - single source of truth with README.md, DEVELOPMENT.md, DEPLOY.md */
 export const readmeMd = readme;
 export const developmentMd = development;
 export const deployMd = deploy;

@@ -1,4 +1,4 @@
-/* Matches table wrapper + glass cards: same border, radius, surface — no accent stripes */
+/* Matches table wrapper + glass cards: same border, radius, surface - no accent stripes */
 
 .panelWrap {
   max-width: 28rem;
@@ -20,6 +20,17 @@
 .panelStretch {
   width: 100%;
   box-sizing: border-box;
+}
+
+/* Inside table stable slots: no nested rounded card - wrapper already supplies chrome */
+.panelFlush {
+  border-radius: 0;
+  padding: 20px 16px 22px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .iconWrap {
@@ -68,7 +79,7 @@
   margin-right: auto;
 }
 
-/* Banner — same chrome as Table.wrapper / filter strip */
+/* Banner - same chrome as Table.wrapper / filter strip */
 .banner {
   display: flex;
   flex-wrap: wrap;

@@ -63,6 +63,16 @@ async function decryptPrivateJwk(encryptedPayload: string, kekStr: string) {
 
 export type KeysFilters = { client_id?: string | null };
 
+export async function countKeys(db: D1Database): Promise<number> {
+  const row = await db.prepare('SELECT COUNT(*) AS n FROM keys').first<{ n: number }>();
+  return Number(row?.n ?? 0);
+}
+
+export async function countIssuedTokens(db: D1Database): Promise<number> {
+  const row = await db.prepare('SELECT COUNT(*) AS n FROM issued_tokens').first<{ n: number }>();
+  return Number(row?.n ?? 0);
+}
+
 export async function getKeys(db: D1Database, filters: KeysFilters = {}): Promise<Key[]> {
   const conditions: string[] = [];
   const binds: unknown[] = [];
