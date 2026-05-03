@@ -72,9 +72,9 @@ Workers KV is **eventually consistent**; immediately after a purge, a few reques
 
 ## 3. Configure `wrangler.jsonc`
 
-1. Edit **[`apps/worker/wrangler.jsonc`](apps/worker/wrangler.jsonc)** (or copy from [`wrangler.jsonc.example`](apps/worker/wrangler.jsonc.example)): set **`database_id`** and KV **`id`** inside **`env.production`** and **`env.dev`** as needed. Each environment needs its own **`d1_databases`** and **`kv_namespaces`** arrays.
+1. Edit **[`apps/worker/wrangler.jsonc`](apps/worker/wrangler.jsonc)** (or copy from [`apps/worker/wrangler.jsonc.example`](apps/worker/wrangler.jsonc.example)): set **`database_id`** and KV **`id`** inside **`env.production`** and **`env.dev`** as needed. Each environment needs its own **`d1_databases`** and **`kv_namespaces`** arrays.
 
-2. Add **`routes`** arrays under **`env.production`** / **`env.dev`** when you attach hostnames. Each environment sets **`workers_dev": true`** so **`*.workers.dev`** previews work without custom routes.
+2. Add **`routes`** arrays under **`env.production`** / **`env.dev`** when you attach hostnames. Each environment sets **`"workers_dev": true`** (see `env.*` in `wrangler.jsonc`) so **`*.workers.dev`** previews work without custom routes.
 
 3. Optional: set **`account_id`** in **`wrangler.jsonc`**, or rely on **`CLOUDFLARE_ACCOUNT_ID`** in the environment (CI sets it).
 
@@ -125,7 +125,7 @@ Optional: edit **`vars`** under **`env.production`** / **`env.dev`** in [`apps/w
 
 ## 6. Build admin and deploy the Worker
 
-Wrangler uploads the Worker script plus **`[assets]`** from [`apps/worker/wrangler.jsonc`](apps/worker/wrangler.jsonc) (`directory = "../admin/dist"`). You **must** produce a fresh **`apps/admin/dist`** before each deploy so hashed bundles for `/`, `/docs`, and `/admin/*` stay correct.
+Wrangler uploads the Worker script plus the **`assets`** block from [`apps/worker/wrangler.jsonc`](apps/worker/wrangler.jsonc) (`directory = "../admin/dist"`). You **must** produce a fresh **`apps/admin/dist`** before each deploy so hashed bundles for `/`, `/docs`, and `/admin/*` stay correct.
 
 | Target | Command (from repo root, after `pnpm predeploy` or `pnpm --filter admin build`) |
 |--------|-----------------------------------------------------------------------------------|
@@ -238,7 +238,7 @@ Restrict **`deploy.yml`** to trusted branches (e.g. only `main`) so forks cannot
 
 **Backups (production)**
 
-- Periodically export D1: see [D1 export](https://developers.cloudflare.com/d1/best-practices/import-export-data/) (`wrangler d1 export … --env production` or **`--env dev`**). Store exports securely off-git. To hydrate **local** Miniflare from remote, see **`pnpm db:export:remote:*`**, **`pnpm db:filter:dump`**, **`pnpm db:import:local:*`** (or **`pnpm db:pull:remote`**) in [`DEVELOPMENT.md`](DEVELOPMENT.md).
+- Periodically export D1: see [D1 export](https://developers.cloudflare.com/d1/best-practices/import-export-data/) (`wrangler d1 export … --env production` or **`--env dev`**). Store exports securely **off-git** (this repo’s tooling and hand copies belong under **`apps/worker/d1-export/`**; `*.sql` / `*.raw.sql` there are **gitignored** — see [`apps/worker/d1-export/README.md`](apps/worker/d1-export/README.md)). To hydrate **local** Miniflare from remote, see **`pnpm db:export:remote:*`**, **`pnpm db:filter:dump`**, **`pnpm db:import:local:*`** (or **`pnpm db:pull:remote`**) in [`DEVELOPMENT.md`](DEVELOPMENT.md).
 - Treat **`KEK`** like a root secret: loss means ciphertext for existing server-issued private keys is unrecoverable.
 
 **After data loss**

@@ -21,7 +21,7 @@
    | Step | Command (production example) |
    |------|------------------------------|
    | Export remote DB (no schema) | **`pnpm db:export:remote:production`** → **`apps/worker/d1-export/production.raw.sql`** |
-   | Strip `d1_migrations` / `sqlite_sequence` lines | **`pnpm db:filter:dump -- d1-export/production.raw.sql d1-export/production.sql`** (paths relative to **`apps/worker`**) |
+   | Strip `d1_migrations` / `sqlite_sequence` lines | **`pnpm db:filter:dump -- d1-export/production.raw.sql d1-export/production.sql`** (run from repo root; paths relative to **`apps/worker`**) |
    | Import into **local** Miniflare D1 | **`pnpm db:import:local:production`** (reads **`d1-export/production.sql`**) |
 
    For **dev** remote → local: **`pnpm db:export:remote:dev`**, then filter **`d1-export/dev.raw.sql`** → **`d1-export/dev.sql`**, then **`pnpm db:import:local:dev`**.

@@ -142,13 +142,18 @@ dist
 .svelte-kit
 
 ### CloudflareWorkers ###
+# Vite / bundler output (`dist` also appears in the Node section above; repeats are harmless)
+dist/
+**/dist/
 # Wrangler local secrets (next to wrangler.jsonc)
 /apps/worker/.dev.vars
 /apps/worker/.dev.vars.dev
 /apps/worker/.dev.vars.production
-# Remote D1 exports / filtered dumps (may contain sensitive rows)
+# Remote D1 exports / filtered dumps (may contain sensitive rows); keep only README in git
 apps/worker/d1-export/*.sql
-/dist
+apps/worker/d1-export/*.raw.sql
+# Ad-hoc remote dumps at worker root (use apps/worker/d1-export/ instead)
+apps/worker/.remote-d1-*.sql
 /.mf
 .wrangler
 
