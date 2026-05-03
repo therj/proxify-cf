@@ -92,6 +92,8 @@ export const api = {
       target?: string;
       kid?: string;
       route_id?: string;
+      since?: number;
+      until?: number;
       limit?: number;
       offset?: number;
     }) => {
@@ -101,11 +103,14 @@ export const api = {
       if (filters?.target) q.set('target', filters.target);
       if (filters?.kid) q.set('kid', filters.kid);
       if (filters?.route_id) q.set('route_id', filters.route_id);
+      if (filters?.since != null) q.set('since', String(filters.since));
+      if (filters?.until != null) q.set('until', String(filters.until));
       if (filters?.limit != null) q.set('limit', String(filters.limit));
       if (filters?.offset != null) q.set('offset', String(filters.offset));
       const qs = q.toString();
       return fetchApi<AuditLog[]>(`/audit${qs ? `?${qs}` : ''}`);
     },
+    count: () => fetchApi<number>('/audit/count'),
     actions: () => fetchApi<string[]>('/audit/actions'),
   },
   access: {
@@ -114,6 +119,7 @@ export const api = {
       route_id?: string;
       kid?: string;
       outcome?: string;
+      host_path?: string;
       since?: number;
       until?: number;
       limit?: number;
@@ -124,6 +130,7 @@ export const api = {
       if (filters?.route_id) q.set('route_id', filters.route_id);
       if (filters?.kid) q.set('kid', filters.kid);
       if (filters?.outcome) q.set('outcome', filters.outcome);
+      if (filters?.host_path?.trim()) q.set('host_path', filters.host_path.trim());
       if (filters?.since != null) q.set('since', String(filters.since));
       if (filters?.until != null) q.set('until', String(filters.until));
       if (filters?.limit != null) q.set('limit', String(filters.limit));
@@ -131,5 +138,6 @@ export const api = {
       const qs = q.toString();
       return fetchApi<AccessLog[]>(`/access${qs ? `?${qs}` : ''}`);
     },
+    count: () => fetchApi<number>('/access/count'),
   },
 };

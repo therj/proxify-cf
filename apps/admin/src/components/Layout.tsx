@@ -1,6 +1,15 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { Shield, LayoutDashboard, Users, Route, KeyRound, Link2, ScrollText, Activity } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Users,
+  Route,
+  KeyRound,
+  Link2,
+  ScrollText,
+  Activity,
+} from 'lucide-react';
+import { AppHeader } from './AppHeader';
 import styles from './Layout.module.css';
 
 const navItems = [
@@ -15,31 +24,30 @@ const navItems = [
 
 export const Layout: React.FC = () => {
   return (
-    <div className={styles.layout}>
-      <aside className={styles.sidebar}>
-        <div className={styles.logo}>
-          <Shield className={styles.logoIcon} size={28} />
-          <span>ProxifyAdmin</span>
-        </div>
-        <nav className={styles.nav}>
-          {navItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              end={item.end}
-              className={({ isActive }) => 
-                isActive ? `${styles.navItem} ${styles.active}` : styles.navItem
-              }
-            >
-              <item.icon size={20} />
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-      </aside>
-      <main className={styles.main} data-scroll-root="admin">
-        <Outlet />
-      </main>
+    <div className={styles.shell}>
+      <AppHeader />
+      <div className={styles.bodyInner}>
+        <aside className={styles.sidebar}>
+          <nav className={styles.nav} aria-label="Admin console">
+            {navItems.map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                end={item.end}
+                className={({ isActive }) =>
+                  isActive ? `${styles.navItem} ${styles.active}` : styles.navItem
+                }
+              >
+                <item.icon size={20} />
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+        </aside>
+        <main className={styles.main} data-scroll-root="admin">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 };

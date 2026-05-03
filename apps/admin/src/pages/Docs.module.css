@@ -24,7 +24,47 @@
   font-size: 16px;
   line-height: 1.6;
   color: var(--text-secondary);
-  margin-bottom: 24px;
+  margin: 0 0 12px;
+}
+
+.introSecond {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin: 0 0 24px;
+}
+
+.intro a,
+.introSecond a {
+  color: var(--accent-primary);
+  font-weight: 500;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.intro a:hover,
+.introSecond a:hover {
+  text-decoration: underline;
+}
+
+.externalIcon {
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.headerExternalBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .toc {

@@ -9,6 +9,7 @@ import { api } from '../lib/api';
 import { Route } from '@proxify-cf/shared';
 import nc from '../components/ui/nativeControls.module.css';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { AdminPageTitle } from '../components/AdminPageTitle';
 
 export const Routes = () => {
   const navigate = useNavigate();
@@ -180,12 +181,14 @@ export const Routes = () => {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h2>Routes</h2>
-        <Button onClick={handleOpenCreate}>
-          <Plus size={16} /> Add Route
-        </Button>
-      </div>
+      <AdminPageTitle
+        title="Routes"
+        actions={
+          <Button onClick={handleOpenCreate}>
+            <Plus size={16} /> Add Route
+          </Button>
+        }
+      />
 
       <Table>
         <thead>

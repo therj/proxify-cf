@@ -142,9 +142,12 @@ dist
 .svelte-kit
 
 ### CloudflareWorkers ###
-# Remote D1 data snapshot (may contain sensitive rows)
-apps/worker/.remote-d1-data.sql
-apps/worker/.remote-d1-data.raw.sql
+# Wrangler local secrets (next to wrangler.jsonc)
+/apps/worker/.dev.vars
+/apps/worker/.dev.vars.dev
+/apps/worker/.dev.vars.production
+# Remote D1 exports / filtered dumps (may contain sensitive rows)
+apps/worker/d1-export/*.sql
 /dist
 /.mf
 .wrangler

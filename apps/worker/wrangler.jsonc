@@ -1,0 +1,125 @@
+/**
+ * Proxify Worker — Wrangler config (JSON with Comments).
+ *
+ * Two environments only (`env.dev`, `env.production`). There is no implicit default:
+ *   wrangler dev --env dev | wrangler dev --env production
+ *   wrangler deploy --env dev | wrangler deploy --env production
+ *
+ * Never run `wrangler dev` / `wrangler deploy` without `--env` — you would only get
+ * shared top-level config (e.g. assets) and miss D1/KV for this project layout.
+ *
+ * Local secrets: use `.dev.vars` in this directory (see `.dev.vars.example`). Not stored in JSON.
+ * Cloudflare: `wrangler secret put KEK --env dev` and `--env production`.
+ */
+{
+	// JSON Schema for editor validation (path is relative to this file).
+	"$schema": "node_modules/wrangler/config-schema.json",
+
+	// Logical project name; each env below sets its own Worker `name` for deploy targets.
+	"name": "proxify-cf",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-04-30",
+	"compatibility_flags": ["nodejs_compat"],
+
+	// Preview URLs + workers.dev subdomain; per-env copies exist under `env.*` too.
+	"preview_urls": true,
+	"workers_dev": true,
+
+	// Static admin SPA: build with `pnpm --filter admin build` before deploy.
+	"assets": {
+		"directory": "../admin/dist",
+		"binding": "ASSETS",
+		"run_worker_first": true,
+		// SPA fallback so client-side routes work when served from the Worker.
+		"not_found_handling": "single-page-application",
+	},
+
+	"env": {
+		// ---------------------------------------------------------------------------
+		// Dev — separate Worker, D1, KV, and secrets from production.
+		// ---------------------------------------------------------------------------
+		"dev": {
+			"name": "proxify-cf",
+			"preview_urls": true,
+			"workers_dev": true,
+
+			// Host routing: Worker-as-origin uses custom_domain; zone_name attaches to an existing zone.
+			"routes": [
+				{
+					"pattern": "proxify-cf.rjoshi.net",
+					"custom_domain": true,
+				},
+				{
+					"pattern": "proxify-cf-secure.rjoshi.net",
+					"zone_name": "rjoshi.net",
+				},
+			],
+			// Plain text vars (non-secret). KEK and similar use `wrangler secret put KEK --env dev`.
+			"vars": {
+				"CF_ACCESS_TEAM_DOMAIN": "",
+				"CF_ACCESS_AUD": "",
+				"LOCAL_ADMIN_EMAIL": "",
+			},
+
+			// D1: `database_name` must match `wrangler d1 migrations apply <name> --env dev`.
+			// `binding` must stay `DB` — see apps/worker/src/env.ts.
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "proxify_demo-db",
+					"database_id": "146ef4e5-cfcc-4a95-947b-94576dd69faa",
+					"migrations_dir": "./migrations",
+				},
+			],
+
+			// KV: `binding` must stay `KV_BINDING` — see apps/worker/src/env.ts.
+			"kv_namespaces": [
+				{
+					"binding": "KV_BINDING",
+					"id": "c08d9b5fedaa4157975f2f3ee67bb862",
+				},
+			],
+		},
+
+		// ---------------------------------------------------------------------------
+		// Production — live hostnames, real D1/KV IDs, Cloudflare Access vars.
+		// ---------------------------------------------------------------------------
+		"production": {
+			"name": "proxify",
+			"preview_urls": false,
+			"workers_dev": false,
+
+			// Host routing: Worker-as-origin uses custom_domain; zone_name attaches to an existing zone.
+			"routes": [
+				{
+					"pattern": "proxify.rjoshi.net",
+					"custom_domain": true,
+				},
+				{
+					"pattern": "santosh-gemma.rjoshi.net",
+					"zone_name": "rjoshi.net",
+				},
+			],
+			"vars": {
+				"CF_ACCESS_TEAM_DOMAIN": "",
+				"CF_ACCESS_AUD": "",
+				"LOCAL_ADMIN_EMAIL": "mail@rjoshi.net",
+			},
+
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "proxify-db",
+					"database_id": "25526790-127c-4f8a-9b0d-367db37d3206",
+					"migrations_dir": "./migrations",
+				},
+			],
+			"kv_namespaces": [
+				{
+					"binding": "KV_BINDING",
+					"id": "5044cff968f64f248d498b0264112beb",
+				},
+			],
+		},
+	},
+}

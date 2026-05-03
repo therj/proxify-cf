@@ -5,7 +5,7 @@ export const KV_PREFIX = 'v1';
 /** Monotonic generation — bump invalidates metadata + admin API cache keys (keys embed epoch). */
 export const META_CFG_EPOCH = `${KV_PREFIX}:meta:cfg_epoch`;
 
-/** Reserved for `/health` KV probe (not tied to epoch purge). */
+/** Reserved for `GET /api/health` KV probe (not tied to epoch purge). */
 export const SYS_HEALTH_PROBE = `${KV_PREFIX}:sys:health_probe`;
 
 export function routeLookupKey(cfgEpoch: number, host: string, pathname: string): string {

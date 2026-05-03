@@ -37,10 +37,13 @@
 /* Variants */
 .primary {
   background: var(--accent-primary);
+  color: var(--btn-primary-fg);
 }
 .primary:hover:not(:disabled) {
   background: var(--accent-primary-hover);
   border-color: var(--btn-filled-ring-hover);
+  /* Beat global `a:hover { color: accent }` when <Link> uses these classes */
+  color: var(--btn-primary-fg);
 }
 
 .secondary {
@@ -51,14 +54,17 @@
 .secondary:hover:not(:disabled) {
   background: var(--btn-secondary-bg-hover);
   border-color: var(--btn-secondary-border-hover);
+  color: var(--text-primary);
 }
 
 .danger {
   background: var(--accent-danger);
+  color: var(--btn-primary-fg);
 }
 .danger:hover:not(:disabled) {
   background: var(--accent-danger-hover);
   border-color: var(--btn-filled-ring-hover);
+  color: var(--btn-primary-fg);
 }
 
 .spinner {

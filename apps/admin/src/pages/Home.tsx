@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Globe, Lock, ScrollText } from 'lucide-react';
+import { ExternalLink, Globe, Lock, ScrollText } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import btnStyles from '../components/ui/Button.module.css';
 import styles from './Home.module.css';
@@ -22,9 +22,21 @@ export const Home: React.FC = () => {
               Open admin console
             </Link>
             <Link className={`${btnStyles.button} ${btnStyles.secondary} ${btnStyles.lg}`} to="/docs">
-              Read documentation
+              Documentation
             </Link>
           </div>
+          <p className={styles.sourceAfterCta}>
+            Source and issues:{' '}
+            <a
+              className={styles.sourceLink}
+              href="https://github.com/therj/proxify-cf"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              github.com/therj/proxify-cf
+              <ExternalLink className={styles.sourceLinkIcon} size={14} strokeWidth={2} aria-hidden />
+            </a>
+          </p>
         </div>
       </section>
 

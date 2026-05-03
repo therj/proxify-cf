@@ -1,13 +1,19 @@
 # Deployment guide
 
-This repo ships **one Worker** that bundles API routes and the **admin SPA** from [`apps/admin/dist`](apps/admin/dist) via Wrangler **[assets](https://developers.cloudflare.com/workers/static-assets/)** ([`apps/worker/wrangler.toml`](apps/worker/wrangler.toml); template with placeholders: [`apps/worker/wrangler.toml.example`](apps/worker/wrangler.toml.example)). You normally **do not** deploy the admin to Cloudflare Pages unless you want a separate hosting setup.
+**Repository:** [github.com/therj/proxify-cf](https://github.com/therj/proxify-cf)
+
+This repo ships **one Worker** that bundles API routes and the **admin SPA** from [`apps/admin/dist`](apps/admin/dist) via Wrangler **[assets](https://developers.cloudflare.com/workers/static-assets/)** ([`apps/worker/wrangler.jsonc`](apps/worker/wrangler.jsonc); annotated reference: [`apps/worker/wrangler.jsonc.example`](apps/worker/wrangler.jsonc.example)). You normally **do not** deploy the admin to Cloudflare Pages unless you want a separate hosting setup.
+
+**Wrangler environments:** a single [`apps/worker/wrangler.jsonc`](apps/worker/wrangler.jsonc) defines only **`env.dev`** and **`env.production`** — there is **no** implicit default: every deploy and local **`wrangler dev`** must pass **`--env dev`** or **`--env production`**. Shared fields are **`main`**, compatibility flags, and **`assets`**; routes, D1, KV, and **`vars`** live under each environment object. D1/KV UUIDs live **only in `wrangler.jsonc`** (no repo env-file injection layer).
+
+**Do not** run bare **`wrangler deploy`** or **`wrangler dev`** without **`--env`**: Wrangler will treat that as a separate empty “top-level” environment and you will **not** get D1/KV bindings. Use the **`pnpm`** scripts under [`apps/worker/package.json`](apps/worker/package.json) or always pass **`--env dev`** / **`--env production`**.
 
 ---
 
 ## 1. Prerequisites
 
 - [Cloudflare account](https://dash.cloudflare.com/), Workers enabled
-- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/install-and-update/) (`pnpm exec wrangler` from this repo)
+- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/install-and-update/) — from `apps/worker`, use **`pnpm exec wrangler`** or the **`pnpm`** scripts in [`apps/worker/package.json`](apps/worker/package.json) (they pass **`--env`** where needed).
 - Node.js **current or Active LTS** (Wrangler 4 does not support Node 16)
 
 ---
@@ -16,13 +22,22 @@ This repo ships **one Worker** that bundles API routes and the **admin SPA** fro
 
 Run from the repo root (or `cd apps/worker` and drop `cd apps/worker &&`):
 
+**Production (`--env production`)**
+
 ```bash
 cd apps/worker
 pnpm exec wrangler d1 create proxify-db
 pnpm exec wrangler kv namespace create proxify_cache
 ```
 
-Copy the **database ID** and **KV namespace ID** from the command output.
+**Dev (`--env dev`)**
+
+```bash
+pnpm exec wrangler d1 create proxify_demo-db
+pnpm exec wrangler kv namespace create proxify_cache_dev
+```
+
+Copy each **database ID** and **KV namespace ID** into the **`d1_databases`** and **`kv_namespaces`** arrays under **`env.production`** and **`env.dev`** in [`apps/worker/wrangler.jsonc`](apps/worker/wrangler.jsonc). The **`binding`** names (`DB`, `KV_BINDING`) must stay aligned with [`apps/worker/src/env.ts`](apps/worker/src/env.ts).
 
 ### KV cache (runtime)
 
@@ -36,7 +51,7 @@ The Worker uses the same namespace for **application cache** (not only connectiv
 
 Proxied requests append rows to the **`access_log`** table (JWT/upstream outcomes, optional client IP, denied attempts when metadata exists). Storage is **D1 only**, not KV—high write volume and need for time-range scans make KV a poor fit. Plan retention or export externally if you need long-term archives; D1 does not automatically prune old rows.
 
-**`/health`** probes **`v1:sys:health_probe`** — unrelated to epoch bumps.
+**`GET /api/health`** probes **`v1:sys:health_probe`** — unrelated to epoch bumps. **`/health`** is the HTML status page in the SPA (it calls the same JSON endpoint in the browser).
 
 **Manual reset** (admin API) — bumps **`cfg_epoch`** (same effect for both scopes below):
 
@@ -55,59 +70,67 @@ Workers KV is **eventually consistent**; immediately after a purge, a few reques
 
 ---
 
-## 3. Configure `wrangler.toml`
+## 3. Configure `wrangler.jsonc`
 
-Use **[`apps/worker/wrangler.toml.example`](apps/worker/wrangler.toml.example)** as the annotated template (placeholders, comments, optional `[[routes]]` examples). Copy it and edit:
+1. Edit **[`apps/worker/wrangler.jsonc`](apps/worker/wrangler.jsonc)** (or copy from [`wrangler.jsonc.example`](apps/worker/wrangler.jsonc.example)): set **`database_id`** and KV **`id`** inside **`env.production`** and **`env.dev`** as needed. Each environment needs its own **`d1_databases`** and **`kv_namespaces`** arrays.
+
+2. Add **`routes`** arrays under **`env.production`** / **`env.dev`** when you attach hostnames. Each environment sets **`workers_dev": true`** so **`*.workers.dev`** previews work without custom routes.
+
+3. Optional: set **`account_id`** in **`wrangler.jsonc`**, or rely on **`CLOUDFLARE_ACCOUNT_ID`** in the environment (CI sets it).
+
+Do **not** commit secrets such as **`KEK`**; use **`wrangler secret put`** per environment (see §5).
+
+**Dry-run production:**
 
 ```bash
 cd apps/worker
-cp wrangler.toml.example wrangler.toml
+pnpm exec wrangler deploy --dry-run --env production
 ```
-
-If you already have a filled-in **`wrangler.toml`** for your site, keep it — the example is for new setups or diffing against a safe baseline without real IDs in docs.
-
-1. Set **`database_id`** under `[[d1_databases]]` to your D1 UUID from §2 (or Dashboard).
-2. Set **`id`** under `[[kv_namespaces]]` to your KV namespace id from §2.
-3. Optionally add **`[[routes]]`** for custom hostnames (see comments in the example); omit routes to use **`*.workers.dev`** only.
-4. Add your Cloudflare **account id** (recommended for CI and clarity):
-
-   ```toml
-   account_id = "your-cloudflare-account-uuid"
-   ```
-
-   You can also rely on the **`CLOUDFLARE_ACCOUNT_ID`** environment variable instead of committing `account_id`.
-
-Do **not** commit secrets such as **`KEK`**; use `wrangler secret put` (see below).
 
 ---
 
-## 4. Apply migrations (production D1)
+## 4. Apply migrations (remote D1)
+
+**Production** (database name **`proxify-db`**, **`--env production`**):
 
 ```bash
 cd apps/worker
-pnpm exec wrangler d1 migrations apply proxify-db --remote
+pnpm exec wrangler d1 migrations apply proxify-db --remote --env production
 ```
 
-Use **`--local`** only for the SQLite database on your machine.
+**Dev** (database name must match **`database_name`** under **`env.dev`** in `wrangler.jsonc`, e.g. **`proxify_demo-db`**):
+
+```bash
+cd apps/worker
+pnpm exec wrangler d1 migrations apply proxify_demo-db --remote --env dev
+```
+
+Local Miniflare: **`pnpm --filter worker run db:migrate:local`** (dev) or **`db:migrate:local:production`**.
 
 ---
 
-## 5. Production secrets
+## 5. Secrets (per environment)
 
-Generate a long random **KEK** (32+ characters) for encrypting server-issued private keys in D1:
+Generate a long random **KEK** (32+ characters) for encrypting server-issued private keys in D1. **Secrets are not shared** across environments:
 
 ```bash
 cd apps/worker
-pnpm exec wrangler secret put KEK
+pnpm exec wrangler secret put KEK --env production
+pnpm exec wrangler secret put KEK --env dev
 ```
 
-Optional: set [`vars`](apps/worker/wrangler.toml) or secrets for `CF_ACCESS_*`, `LOCAL_ADMIN_EMAIL`, etc., per your Access / SSO setup.
+Optional: edit **`vars`** under **`env.production`** / **`env.dev`** in [`apps/worker/wrangler.jsonc`](apps/worker/wrangler.jsonc) for `CF_ACCESS_*`, `LOCAL_ADMIN_EMAIL`, etc., per your Access / SSO setup.
 
 ---
 
 ## 6. Build admin and deploy the Worker
 
-Wrangler uploads the Worker script plus **`[assets]`** from [`apps/worker/wrangler.toml`](apps/worker/wrangler.toml) (`directory = "../admin/dist"`). You **must** produce a fresh **`apps/admin/dist`** before each deploy so hashed bundles for `/`, `/docs`, and `/admin/*` stay correct.
+Wrangler uploads the Worker script plus **`[assets]`** from [`apps/worker/wrangler.jsonc`](apps/worker/wrangler.jsonc) (`directory = "../admin/dist"`). You **must** produce a fresh **`apps/admin/dist`** before each deploy so hashed bundles for `/`, `/docs`, and `/admin/*` stay correct.
+
+| Target | Command (from repo root, after `pnpm predeploy` or `pnpm --filter admin build`) |
+|--------|-----------------------------------------------------------------------------------|
+| **Production** | `pnpm deploy` or `pnpm --filter worker run deploy` (runs **`wrangler deploy --env production`**) |
+| **Dev** | `pnpm --filter worker run deploy:dev` |
 
 ### Root `package.json` scripts
 
@@ -173,7 +196,7 @@ Workflows use **Node.js 22**, **pnpm 9**, and **`pnpm install --frozen-lockfile`
 | Workflow | When | Steps |
 |----------|------|--------|
 | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | Push or PR to **`main`** | Install deps → **`pnpm -r typecheck`** → **`pnpm --filter admin build`** |
-| [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) | Push to **`main`** or **workflow_dispatch** | Install deps → **`pnpm -r typecheck`** → **`pnpm --filter admin build`** → `cd apps/worker && pnpm run deploy` |
+| [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) | Push to **`main`** or **workflow_dispatch** | Install deps → **`pnpm -r typecheck`** → **`pnpm --filter admin build`** → **`cd apps/worker && pnpm run deploy`** (**`--env production`**) |
 
 The deploy job sets **`CLOUDFLARE_API_TOKEN`** and **`CLOUDFLARE_ACCOUNT_ID`** for the Wrangler step.
 
@@ -184,7 +207,7 @@ In **GitHub → Settings → Secrets and variables → Actions**, add:
 | Secret | Required | Purpose |
 |--------|----------|---------|
 | `CLOUDFLARE_API_TOKEN` | Yes for deploy | Token with **Workers Scripts: Edit** (and D1/KV as needed for your account) |
-| `CLOUDFLARE_ACCOUNT_ID` | If not in `wrangler.toml` | Account UUID |
+| `CLOUDFLARE_ACCOUNT_ID` | If not in `wrangler.jsonc` | Account UUID |
 
 Create an API token under **Cloudflare Dashboard → My Profile → API Tokens** with permissions appropriate for Workers deploy and D1/KV bindings.
 
@@ -197,8 +220,8 @@ Restrict **`deploy.yml`** to trusted branches (e.g. only `main`) so forks cannot
 ## 8. Cloudflare Access checklist
 
 - [ ] Access application(s) for the Worker hostname (SSO/MFA as needed).
-- [ ] Path **exclude** or bypass for **`/health`** (monitors) while **protecting `/admin/*`** with Cloudflare Access as needed (see [`DEVELOPMENT.md`](DEVELOPMENT.md)).
-- [ ] Smoke-test **`/`** (landing), **`/docs`**, **`/admin/`** (admin SPA), and **`/admin/api/v1/*`** after deploy.
+- [ ] Path **exclude** or bypass for **`/api/*`** (public JSON, e.g. **`/api/health`** for monitors) while **protecting `/admin/*`** with Cloudflare Access as needed; add **`/health`** too if you want the HTML status page reachable without SSO (see [`DEVELOPMENT.md`](DEVELOPMENT.md)).
+- [ ] Smoke-test **`/`** (landing), **`/docs`**, **`/admin/`** (admin SPA), **`/api/health`**, and **`/admin/api/v1/*`** after deploy.
 
 ---
 
@@ -209,19 +232,19 @@ Restrict **`deploy.yml`** to trusted branches (e.g. only `main`) so forks cannot
 | Situation | What happened |
 |-----------|----------------|
 | **Local dev** | The Miniflare D1 database lives under something like `apps/worker/.wrangler/`. Deleting that folder, recloning without copying state, or SQLite **`SQLITE_BUSY`** / corruption during reload can wipe or lock local data. |
-| **Production** | Recreating the D1 database, applying migrations to a **new** DB ID, or pointing `wrangler.toml` at wrong IDs creates an **empty** database. |
+| **Production** | Recreating the D1 database, applying migrations to a **new** DB ID, or pointing **`wrangler.jsonc`** at the wrong **`database_id`** / KV **`id`** for an environment creates an **empty** database for that Worker. |
 | **KEK rotated or lost** | Server-issued keys stored encrypted with the old KEK **cannot be decrypted**; issue new keys and revoke old ones. |
-| **KV `proxify_cache`** | Replacing the namespace ID in `wrangler.toml` drops all cached entries (see §2). Does not delete D1 data. |
+| **KV `proxify_cache`** | Replacing a KV **`id`** for an environment drops cached entries for that Worker (see §2). Does not delete D1 data. |
 
 **Backups (production)**
 
-- Periodically export D1: see [D1 export](https://developers.cloudflare.com/d1/best-practices/import-export-data/) (`wrangler d1 export …`). Store exports securely off-git.
+- Periodically export D1: see [D1 export](https://developers.cloudflare.com/d1/best-practices/import-export-data/) (`wrangler d1 export … --env production` or **`--env dev`**). Store exports securely off-git. To hydrate **local** Miniflare from remote, see **`pnpm db:export:remote:*`**, **`pnpm db:filter:dump`**, **`pnpm db:import:local:*`** (or **`pnpm db:pull:remote`**) in [`DEVELOPMENT.md`](DEVELOPMENT.md).
 - Treat **`KEK`** like a root secret: loss means ciphertext for existing server-issued private keys is unrecoverable.
 
 **After data loss**
 
-1. Confirm **`database_id`** / KV **`id`** in `wrangler.toml` match the DB and namespace you intend to use.
-2. Re-run **`wrangler d1 migrations apply proxify-db --remote`** only if the schema is missing (not on a healthy populated DB unless you intend to migrate).
+1. Confirm **`wrangler.jsonc`** UUIDs match the D1 databases and KV namespaces for each **`--env`** you deploy.
+2. Re-run **`pnpm exec wrangler d1 migrations apply proxify-db --remote --env production`** or **`… proxify_demo-db --remote --env dev`** (use each env’s **`database_name`** from `wrangler.jsonc`) only if the schema is missing for that environment.
 3. Regenerate **keys** and **tokens** in the admin UI; communicate new credentials to clients.
 
 ---
@@ -239,13 +262,16 @@ Restrict **`deploy.yml`** to trusted branches (e.g. only `main`) so forks cannot
 
 ### Worker package (`apps/worker`)
 
-Run from **`apps/worker`** (or prefix with `pnpm exec wrangler` from that directory):
+Run from **`apps/worker`** (or `pnpm exec wrangler` with **`cwd`** here):
 
 | Task | Command |
 |------|---------|
-| Deploy Worker | `pnpm run deploy` |
-| Apply D1 migrations (remote) | `pnpm exec wrangler d1 migrations apply proxify-db --remote` |
-| Set `KEK` secret | `pnpm exec wrangler secret put KEK` |
+| Deploy production | `pnpm run deploy` |
+| Deploy dev | `pnpm run deploy:dev` |
+| Apply D1 migrations (remote, production) | `pnpm exec wrangler d1 migrations apply proxify-db --remote --env production` |
+| Apply D1 migrations (remote, dev) | `pnpm exec wrangler d1 migrations apply proxify_demo-db --remote --env dev` |
+| Set `KEK` secret (production) | `pnpm exec wrangler secret put KEK --env production` |
+| Set `KEK` for dev | `pnpm exec wrangler secret put KEK --env dev` |
 
 ### Purge KV application cache (HTTP)
 
@@ -259,4 +285,4 @@ curl -sS -X POST "https://YOUR_WORKER_HOST/admin/api/v1/cache/purge" \
 
 Example response shape: `{ "data": { "cfg_epoch": 3 } }`.
 
-For Wrangler CLI changes after upgrades, run `pnpm exec wrangler --help`.
+For Wrangler CLI changes after upgrades, run **`pnpm exec wrangler --help`** from **`apps/worker`**.

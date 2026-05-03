@@ -13,8 +13,17 @@
   font-size: 14px;
 }
 
+/* Stable column widths when tbody has no per-column cells (e.g. empty filter results) */
+.tableFixed {
+  table-layout: fixed;
+}
+
+.tableFixed .td {
+  overflow-wrap: break-word;
+}
+
 .th {
-  padding: 12px 16px;
+  padding: 0;
   border-bottom: 1px solid var(--surface-border);
   background: var(--table-header-bg);
   color: var(--text-secondary);
@@ -22,6 +31,23 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-size: 12px;
+  text-align: left;
+  /* Top-align so multi-row thead (filters + titles) matches single-row pages; avoids flex-center drift vs Grants */
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+/* Block label: same padding/box on every page (Audit second thead row vs Grants first row) */
+.thLabel {
+  display: block;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 12px 16px;
+  line-height: 1.25;
+}
+
+.thNumeric .thLabel {
+  text-align: right;
 }
 
 .td {
@@ -29,6 +55,8 @@
   border-bottom: 1px solid var(--divider-subtle);
   color: var(--text-primary);
   transition: background var(--transition-fast);
+  text-align: left;
+  vertical-align: middle;
 }
 
 .table tbody tr:last-child .td {
@@ -37,4 +65,60 @@
 
 .table tbody tr:hover .td {
   background: var(--surface-hover-strong);
+}
+
+/* First thead row: filters aligned to the columns below (legacy / Grants) */
+.filterRow td {
+  padding: 12px 16px;
+  vertical-align: bottom;
+  border-bottom: 1px solid var(--surface-border);
+  background: var(--surface-bg);
+  text-align: left;
+}
+
+/* Toolbar above table — same visual weight as .filterRow; widths decoupled from <colgroup> */
+.filterStrip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 16px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--surface-border);
+  background: var(--surface-bg);
+  text-align: left;
+}
+
+.filterStripField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* Match Audit’s former first-column (~18%) feel; not tied to Access timestamp col */
+.filterStripClient {
+  flex: 0 1 18%;
+  min-width: 220px;
+  max-width: 360px;
+}
+
+.filterStripGrow {
+  flex: 1 1 200px;
+  min-width: 160px;
+}
+
+.filterStripNarrow {
+  flex: 0 1 160px;
+  min-width: 120px;
+  max-width: 220px;
+}
+
+.filterStripHostPath {
+  flex: 2 1 260px;
+  min-width: 200px;
+}
+
+.filterStripActions {
+  flex: 0 0 auto;
+  margin-left: auto;
 }

@@ -11,8 +11,15 @@
     "typecheck": "pnpm -r typecheck",
     "build": "pnpm --filter admin build",
     "predeploy": "pnpm typecheck && pnpm run build",
+    "predeploy:dev": "pnpm typecheck && pnpm run build",
     "deploy": "pnpm --filter worker run deploy",
-    "db:pull:remote": "pnpm --filter worker run db:pull:remote"
+    "deploy:dev": "pnpm --filter worker run deploy:dev",
+    "db:pull:remote": "pnpm --filter worker run db:pull:remote",
+    "db:export:remote:dev": "pnpm --filter worker run db:export:remote:dev",
+    "db:export:remote:production": "pnpm --filter worker run db:export:remote:production",
+    "db:filter:dump": "pnpm --filter worker run db:filter:dump",
+    "db:import:local:dev": "pnpm --filter worker run db:import:local:dev",
+    "db:import:local:production": "pnpm --filter worker run db:import:local:production"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

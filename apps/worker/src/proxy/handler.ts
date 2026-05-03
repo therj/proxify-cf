@@ -59,7 +59,7 @@ export const proxyHandler = async (c: Context<{ Bindings: Env }>, opts?: ProxyHa
   const hostLog = normalizeIncomingHost(hostHeader);
   const clientIp = clientIpFromRequest(req);
   const incomingMethod = req.method;
-  const kv = c.env.proxify_cache;
+  const kv = c.env.KV_BINDING;
 
   const base = (): Pick<NewAccessLog, 'host' | 'path' | 'client_ip'> => ({
     host: hostLog,

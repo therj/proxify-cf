@@ -6,7 +6,10 @@ import { Modal } from '../components/ui/Modal';
 import { api } from '../lib/api';
 import { ClientRouteGrant, Client, Route } from '@proxify-cf/shared';
 import nc from '../components/ui/nativeControls.module.css';
+import tableStyles from '../components/ui/Table.module.css';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { AdminPageTitle } from '../components/AdminPageTitle';
+import { formatDateTime } from '../lib/formatDateTime';
 export const Grants = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -129,24 +132,32 @@ export const Grants = () => {
           </Button>
         </div>
       ) : null}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h2>Route Grants</h2>
-        <Button
-          type="button"
-          onClick={() => {
-            setFormData((prev) => ({
-              ...prev,
-              ...(filterClientId ? { client_id: filterClientId } : {}),
-              ...(filterRouteId ? { route_id: filterRouteId } : {}),
-            }));
-            setModalOpen(true);
-          }}
-        >
-          Create Grant
-        </Button>
-      </div>
+      <AdminPageTitle
+        title="Route Grants"
+        actions={
+          <Button
+            type="button"
+            onClick={() => {
+              setFormData((prev) => ({
+                ...prev,
+                ...(filterClientId ? { client_id: filterClientId } : {}),
+                ...(filterRouteId ? { route_id: filterRouteId } : {}),
+              }));
+              setModalOpen(true);
+            }}
+          >
+            Create Grant
+          </Button>
+        }
+      />
 
-      <Table>
+      <Table className={tableStyles.tableFixed}>
+        <colgroup>
+          <col style={{ width: '24%' }} />
+          <col style={{ width: '28%' }} />
+          <col style={{ width: '26%' }} />
+          <col style={{ width: '22%' }} />
+        </colgroup>
         <thead>
           <tr>
             <Th>Client</Th>
@@ -181,7 +192,7 @@ export const Grants = () => {
                 >
                   <Td>{clientName}</Td>
                   <Td style={{ fontWeight: 500 }}>{routeHost}</Td>
-                  <Td>{new Date(g.granted_at).toLocaleDateString()}</Td>
+                  <Td>{formatDateTime(g.granted_at)}</Td>
                   <Td>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }} onClick={(e) => e.stopPropagation()}>
                       <Button

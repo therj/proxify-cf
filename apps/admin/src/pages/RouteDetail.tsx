@@ -6,6 +6,8 @@ import { Table, Th, Td } from '../components/ui/Table';
 import { EntityAuditHistoryModal } from '../components/EntityAuditHistoryModal';
 import { api } from '../lib/api';
 import { Client, ClientRouteGrant, Route } from '@proxify-cf/shared';
+import { AdminPageTitle } from '../components/AdminPageTitle';
+import { formatDateTime } from '../lib/formatDateTime';
 
 export const RouteDetail = () => {
   const navigate = useNavigate();
@@ -80,29 +82,26 @@ export const RouteDetail = () => {
         </Link>
       </div>
 
-      <div
-        style={{
-          marginBottom: 28,
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          gap: 16,
-        }}
-      >
-        <div>
-          <h2 style={{ margin: '0 0 8px' }}>{loading ? '…' : routeLabel(route!)}</h2>
-          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)', wordBreak: 'break-all' }}>
-            Upstream: {loading ? '…' : route?.upstream_url}
-          </p>
-          <p style={{ margin: '8px 0 0', fontSize: 12, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
-            {routeId}
-          </p>
-        </div>
-        <Button variant="secondary" type="button" onClick={() => setAuditOpen(true)} disabled={loading}>
-          Audit history
-        </Button>
-      </div>
+      <AdminPageTitle
+        title={loading ? '…' : route ? routeLabel(route) : 'Route'}
+        description={
+          !loading && route ? (
+            <>
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)', wordBreak: 'break-all' }}>
+                Upstream: {route.upstream_url}
+              </p>
+              <p style={{ margin: '8px 0 0', fontSize: 12, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
+                {routeId}
+              </p>
+            </>
+          ) : undefined
+        }
+        actions={
+          <Button variant="secondary" type="button" onClick={() => setAuditOpen(true)} disabled={loading}>
+            Audit history
+          </Button>
+        }
+      />
 
       <section style={{ marginBottom: 32 }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
@@ -147,7 +146,7 @@ export const RouteDetail = () => {
                       {nameByClient.get(g.client_id) ?? g.client_id}
                     </Link>
                   </Td>
-                  <Td>{new Date(g.granted_at).toLocaleString()}</Td>
+                  <Td>{formatDateTime(g.granted_at)}</Td>
                 </tr>
               ))
             )}

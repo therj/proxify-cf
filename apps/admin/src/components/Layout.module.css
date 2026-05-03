@@ -1,32 +1,54 @@
-.layout {
-  display: flex;
+.shell {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.bodyInner {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  /* No top padding: keeps sidebar flush under the header so its border meets the header border */
+  padding: 0 var(--app-chrome-padding-x) var(--app-chrome-padding-y) var(--app-chrome-padding-left);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0;
+}
+
+@media (max-width: 640px) {
+  .bodyInner {
+    padding: 0 20px var(--app-chrome-padding-y) 20px;
+    flex-direction: column;
+  }
 }
 
 .sidebar {
-  width: 260px;
+  width: var(--admin-sidebar-width);
+  flex-shrink: 0;
   background: var(--sidebar-bg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border-right: 1px solid var(--surface-border);
   display: flex;
   flex-direction: column;
-  padding: 24px;
+  /* 40px top ≈ former bodyInner top gap + sidebar inset so nav lines up with previous layout */
+  padding: 40px 16px 20px 0;
+  box-sizing: border-box;
 }
 
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 40px;
-  font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.logoIcon {
-  color: var(--accent-primary);
+@media (max-width: 640px) {
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--surface-border);
+    padding: 16px 0;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
 }
 
 .nav {
@@ -34,6 +56,14 @@
   flex-direction: column;
   gap: 8px;
   flex: 1;
+}
+
+@media (max-width: 640px) {
+  .nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 100%;
+  }
 }
 
 .navItem {
@@ -62,7 +92,13 @@
 
 .main {
   flex: 1;
-  padding: 40px;
-  overflow-y: auto;
-  max-height: 100vh;
+  min-width: 0;
+  /* +20px top vs before: offsets removal of bodyInner padding-top */
+  padding: 44px 0 32px 24px;
+}
+
+@media (max-width: 640px) {
+  .main {
+    padding: 16px 0 24px;
+  }
 }

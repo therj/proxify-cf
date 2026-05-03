@@ -1,3 +1,12 @@
+/** Matches Table .th typography for filter strip labels (uppercase column-style labels). */
+.fieldLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 /** Native selects / code fields — theme tokens (avoid inline dark-only rgba). */
 .select {
   width: 100%;
@@ -9,6 +18,11 @@
   color: var(--text-primary);
   font-size: 14px;
   transition: border-color var(--transition-fast);
+}
+
+/* Native dropdown indicator sits in the padding edge; a bit more right inset than text fields */
+select.select {
+  padding-right: 32px;
 }
 
 .select:focus {

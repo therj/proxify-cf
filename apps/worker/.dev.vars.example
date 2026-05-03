@@ -1,0 +1,5 @@
+# Copy to `.dev.vars` in this directory (same folder as `wrangler.jsonc`).
+# Wrangler loads it for `wrangler dev` / local bindings. Do not commit `.dev.vars`.
+#
+# KEK: 32+ bytes; use a UUID string or any long random secret for local dev.
+KEK="local-dev-dummy-kek-32-chars-long"

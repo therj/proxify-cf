@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Shield } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
+import { SiteBrand } from './SiteBrand';
 import styles from './LandingFooter.module.css';
 
 /** Site chrome footer for marketing/docs routes — admin console keeps its own sidebar. */
@@ -9,10 +10,7 @@ export const LandingFooter: React.FC = () => {
     <footer className={styles.footer}>
       <div className={styles.grid}>
         <div className={styles.colBrand}>
-          <Link to="/" className={styles.brand}>
-            <Shield className={styles.brandIcon} size={22} aria-hidden />
-            <span>Proxify CF</span>
-          </Link>
+          <SiteBrand variant="footer" />
           <p className={styles.tagline}>
             Edge proxy control plane for Cloudflare Workers — routing, auth, and observability in one stack.
           </p>
@@ -37,7 +35,18 @@ export const LandingFooter: React.FC = () => {
           <h3 className={styles.colTitle}>Developers</h3>
           <ul className={styles.linkList}>
             <li>
-              <a href="/health">Health &amp; probes</a>
+              <a
+                href="https://github.com/therj/proxify-cf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.externalLink}
+              >
+                Source on GitHub
+                <ExternalLink className={styles.externalLinkIcon} size={14} strokeWidth={2} aria-hidden />
+              </a>
+            </li>
+            <li>
+              <Link to="/health">Health &amp; probes</Link>
             </li>
             <li className={styles.apiBlock}>
               <span className={styles.mono}>REST API base</span>

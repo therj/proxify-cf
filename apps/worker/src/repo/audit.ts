@@ -6,6 +6,8 @@ export type AuditLogFilters = {
   target_like?: string | null;
   kid?: string | null;
   route_id?: string | null;
+  since?: number | null;
+  until?: number | null;
   limit?: number;
   offset?: number;
 };
@@ -49,6 +51,16 @@ export async function getAuditLogs(db: D1Database, filters: AuditLogFilters = {}
     binds.push(filters.route_id);
     i++;
   }
+  if (filters.since != null && filters.since > 0) {
+    conditions.push(`ts >= ?${i}`);
+    binds.push(filters.since);
+    i++;
+  }
+  if (filters.until != null && filters.until > 0) {
+    conditions.push(`ts <= ?${i}`);
+    binds.push(filters.until);
+    i++;
+  }
 
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
   const limit = Math.min(filters.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
@@ -61,6 +73,11 @@ export async function getAuditLogs(db: D1Database, filters: AuditLogFilters = {}
 
   const { results } = await db.prepare(sql).bind(...binds).all<AuditLog>();
   return results ?? [];
+}
+
+export async function countAuditLogs(db: D1Database): Promise<number> {
+  const row = await db.prepare('SELECT COUNT(*) AS c FROM audit_log').first<{ c: number }>();
+  return Number(row?.c ?? 0);
 }
 
 export async function getDistinctAuditActions(db: D1Database): Promise<string[]> {

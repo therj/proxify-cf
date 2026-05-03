@@ -1,18 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Table, Th, Td } from '../components/ui/Table';
 import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { api } from '../lib/api';
 import { ACCESS_OUTCOME_VALUES } from '@proxify-cf/shared';
-import type { AccessLog, Client, Route } from '@proxify-cf/shared';
+import type { AccessLog, Client, Key, Route } from '@proxify-cf/shared';
 import nc from '../components/ui/nativeControls.module.css';
+import tableStyles from '../components/ui/Table.module.css';
+import { AdminPageTitle } from '../components/AdminPageTitle';
+import { formatDateTime } from '../lib/formatDateTime';
 
 const FETCH_LIMIT = 200;
-
-function formatTs(ts: number): string {
-  return new Date(ts).toLocaleString();
-}
 
 function formatDetail(detail: string | null): string {
   if (detail == null || detail === '') return '';
@@ -27,12 +25,15 @@ export const Access = () => {
   const [logs, setLogs] = useState<AccessLog[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [routes, setRoutes] = useState<Route[]>([]);
+  const [keys, setKeys] = useState<Key[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [filterClientId, setFilterClientId] = useState('');
   const [filterRouteId, setFilterRouteId] = useState('');
   const [filterKid, setFilterKid] = useState('');
   const [filterOutcome, setFilterOutcome] = useState('');
+  const [filterHostPath, setFilterHostPath] = useState('');
+  const [filterHostPathDebounced, setFilterHostPathDebounced] = useState('');
   const [detailRow, setDetailRow] = useState<AccessLog | null>(null);
 
   const nameById = useMemo(() => new Map(clients.map((c) => [c.id, c.name])), [clients]);
@@ -44,7 +45,18 @@ export const Access = () => {
     return m;
   }, [routes]);
 
-  const filtersActive = !!(filterClientId || filterRouteId || filterKid || filterOutcome);
+  const filtersActive = !!(
+    filterClientId ||
+    filterRouteId ||
+    filterKid !== '' ||
+    filterOutcome ||
+    filterHostPathDebounced
+  );
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setFilterHostPathDebounced(filterHostPath.trim()), 400);
+    return () => window.clearTimeout(t);
+  }, [filterHostPath]);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,13 +79,31 @@ export const Access = () => {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      try {
+        const keysData = await api.keys.list(filterClientId ? { client_id: filterClientId } : undefined);
+        if (cancelled) return;
+        setKeys(keysData);
+        setFilterKid((prev) => (prev && !keysData.some((k) => k.kid === prev) ? '' : prev));
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [filterClientId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
       setIsLoading(true);
       try {
         const data = await api.access.list({
           ...(filterClientId ? { client_id: filterClientId } : {}),
           ...(filterRouteId ? { route_id: filterRouteId } : {}),
-          ...(filterKid.trim() ? { kid: filterKid.trim() } : {}),
+          ...(filterKid ? { kid: filterKid } : {}),
           ...(filterOutcome ? { outcome: filterOutcome } : {}),
+          ...(filterHostPathDebounced ? { host_path: filterHostPathDebounced } : {}),
           limit: FETCH_LIMIT,
         });
         if (!cancelled) setLogs(data);
@@ -86,121 +116,106 @@ export const Access = () => {
     return () => {
       cancelled = true;
     };
-  }, [filterClientId, filterRouteId, filterKid, filterOutcome]);
+  }, [filterClientId, filterRouteId, filterKid, filterOutcome, filterHostPathDebounced]);
 
   const clearFilters = () => {
     setFilterClientId('');
     setFilterRouteId('');
     setFilterKid('');
     setFilterOutcome('');
+    setFilterHostPath('');
+    setFilterHostPathDebounced('');
   };
 
   return (
     <div>
-      <div style={{ marginBottom: 8 }}>
-        <h2 style={{ margin: 0 }}>Access logs</h2>
-        <p style={{ margin: '8px 0 0', fontSize: 14, color: 'var(--text-secondary)', maxWidth: 720 }}>
-          Proxied request telemetry (JWT checks and upstream outcomes). Separate from the administrative{' '}
-          <strong style={{ fontWeight: 600 }}>Audit log</strong>.
-        </p>
-      </div>
+      <AdminPageTitle title="Access Logs" />
 
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 16,
-          alignItems: 'flex-end',
-          marginBottom: 24,
-          padding: 16,
-          borderRadius: 8,
-          border: '1px solid var(--surface-border)',
-          background: 'var(--surface-bg)',
-        }}
+      <Table
+        className={tableStyles.tableFixed}
+        toolbar={
+          <div className={tableStyles.filterStrip}>
+            <div className={`${tableStyles.filterStripField} ${tableStyles.filterStripClient}`}>
+              <label className={nc.fieldLabel}>Client</label>
+              <select className={nc.select} value={filterClientId} onChange={(e) => setFilterClientId(e.target.value)}>
+                <option value="">All clients</option>
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className={`${tableStyles.filterStripField} ${tableStyles.filterStripGrow}`}>
+              <label className={nc.fieldLabel}>Route</label>
+              <select className={nc.select} value={filterRouteId} onChange={(e) => setFilterRouteId(e.target.value)}>
+                <option value="">All routes</option>
+                {routes.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.host}
+                    {r.path_prefix !== '/' ? r.path_prefix : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className={`${tableStyles.filterStripField} ${tableStyles.filterStripNarrow}`}>
+              <label className={nc.fieldLabel}>Keys</label>
+              <select className={nc.select} value={filterKid} onChange={(e) => setFilterKid(e.target.value)} title="Signing key (JWT kid)">
+                <option value="">All keys</option>
+                {keys.map((k) => {
+                  const clientName = nameById.get(k.client_id) ?? k.client_id.slice(0, 8) + '…';
+                  const shortKid = `${k.kid.slice(0, 8)}…`;
+                  return (
+                    <option key={k.kid} value={k.kid} title={`${clientName} · ${k.mode} · ${k.kid}`}>
+                      {shortKid}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+            <div className={`${tableStyles.filterStripField} ${tableStyles.filterStripNarrow}`}>
+              <label className={nc.fieldLabel}>Outcome</label>
+              <select className={nc.select} value={filterOutcome} onChange={(e) => setFilterOutcome(e.target.value)}>
+                <option value="">All outcomes</option>
+                {ACCESS_OUTCOME_VALUES.map((o) => (
+                  <option key={o} value={o}>
+                    {o}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className={`${tableStyles.filterStripField} ${tableStyles.filterStripHostPath}`}>
+              <label className={nc.fieldLabel}>Host / path contains</label>
+              <input
+                className={nc.select}
+                value={filterHostPath}
+                onChange={(e) => setFilterHostPath(e.target.value)}
+                placeholder="Substring on host or path"
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </div>
+            <div className={tableStyles.filterStripActions}>
+              <Button variant="secondary" type="button" onClick={clearFilters}>
+                Clear filters
+              </Button>
+            </div>
+          </div>
+        }
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 180 }}>
-          <label
-            style={{
-              fontSize: 12,
-              color: 'var(--text-secondary)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}
-          >
-            Client
-          </label>
-          <select className={nc.select} value={filterClientId} onChange={(e) => setFilterClientId(e.target.value)}>
-            <option value="">All clients</option>
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 200 }}>
-          <label
-            style={{
-              fontSize: 12,
-              color: 'var(--text-secondary)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}
-          >
-            Route
-          </label>
-          <select className={nc.select} value={filterRouteId} onChange={(e) => setFilterRouteId(e.target.value)}>
-            <option value="">All routes</option>
-            {routes.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.host}
-                {r.path_prefix !== '/' ? r.path_prefix : ''}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 140 }}>
-          <label
-            style={{
-              fontSize: 12,
-              color: 'var(--text-secondary)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}
-          >
-            Outcome
-          </label>
-          <select className={nc.select} value={filterOutcome} onChange={(e) => setFilterOutcome(e.target.value)}>
-            <option value="">All outcomes</option>
-            {ACCESS_OUTCOME_VALUES.map((o) => (
-              <option key={o} value={o}>
-                {o}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: '1 1 160px', minWidth: 140 }}>
-          <label
-            style={{
-              fontSize: 12,
-              color: 'var(--text-secondary)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}
-          >
-            Key ID (kid)
-          </label>
-          <Input value={filterKid} onChange={(e) => setFilterKid(e.target.value)} placeholder="Exact match" />
-        </div>
-        <Button variant="secondary" type="button" onClick={clearFilters}>
-          Clear filters
-        </Button>
-      </div>
-
-      <Table>
+        <colgroup>
+          <col style={{ width: '13%' }} />
+          <col style={{ width: '17%' }} />
+          <col style={{ width: '8%' }} />
+          <col style={{ width: '16%' }} />
+          <col style={{ width: '14%' }} />
+          <col style={{ width: '15%' }} />
+          <col style={{ width: '9%' }} />
+          <col style={{ width: '8%' }} />
+        </colgroup>
         <thead>
           <tr>
-            <Th>Time</Th>
+            <Th>Timestamp</Th>
             <Th>Host / path</Th>
             <Th>Method</Th>
             <Th>Outcome</Th>
@@ -243,7 +258,7 @@ export const Access = () => {
                     }
                   }}
                 >
-                  <Td>{formatTs(row.ts)}</Td>
+                  <Td style={{ whiteSpace: 'nowrap', fontSize: 13 }}>{formatDateTime(row.ts)}</Td>
                   <Td>
                     <div style={{ fontSize: 13, wordBreak: 'break-word' }}>
                       <span style={{ color: 'var(--text-primary)' }}>{row.host}</span>
@@ -283,7 +298,7 @@ export const Access = () => {
       <Modal
         isOpen={detailRow != null}
         onClose={() => setDetailRow(null)}
-        title={detailRow ? `Access · ${formatTs(detailRow.ts)}` : 'Access entry'}
+        title={detailRow ? `Access · ${formatDateTime(detailRow.ts)}` : 'Access entry'}
         width={640}
         footer={
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>

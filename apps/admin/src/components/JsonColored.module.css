@@ -1,0 +1,60 @@
+/* Tuned for dark + light `details-pre-bg` shells */
+.root {
+  --json-key: #9cdcfe;
+  --json-string: #ce9178;
+  --json-number: #b5cea8;
+  --json-bool: #569cd6;
+  --json-null: #569cd6;
+  --json-punct: #a1a1aa;
+
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: var(--details-pre-bg);
+  color: var(--code-fg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-x: auto;
+  text-align: left;
+  width: 100%;
+  box-sizing: border-box;
+  white-space: pre;
+  tab-size: 2;
+}
+
+@media (prefers-color-scheme: light) {
+  .root {
+    --json-key: #0451a5;
+    --json-string: #a31515;
+    --json-number: #098658;
+    --json-bool: #0000ff;
+    --json-null: #0000ff;
+    --json-punct: #383838;
+  }
+}
+
+.key {
+  color: var(--json-key);
+}
+
+.string {
+  color: var(--json-string);
+}
+
+.number {
+  color: var(--json-number);
+}
+
+.bool {
+  color: var(--json-bool);
+}
+
+.null {
+  color: var(--json-null);
+  font-style: italic;
+}
+
+.punct {
+  color: var(--json-punct);
+}

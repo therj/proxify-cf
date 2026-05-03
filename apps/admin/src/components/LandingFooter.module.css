@@ -25,27 +25,6 @@
   min-width: 0;
 }
 
-.brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-family: var(--font-display);
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  text-decoration: none;
-  margin-bottom: 12px;
-}
-
-.brand:hover {
-  color: var(--text-primary);
-}
-
-.brandIcon {
-  color: var(--accent-primary);
-  flex-shrink: 0;
-}
-
 .tagline {
   font-size: 14px;
   line-height: 1.55;
@@ -78,6 +57,17 @@
   color: var(--text-primary);
   text-decoration: none;
   transition: color var(--transition-fast);
+}
+
+.linkList a.externalLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.externalLinkIcon {
+  flex-shrink: 0;
+  opacity: 0.75;
 }
 
 .linkList a:hover {

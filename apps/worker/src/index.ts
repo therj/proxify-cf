@@ -4,7 +4,7 @@ import { proxyHandler } from './proxy/handler';
 import { Env } from './env';
 import { getCfgEpoch } from './cache/epoch';
 import { cachedFindRouteForRequest } from './cache/metadata';
-import { healthRoutes } from './health/routes';
+import { publicApiRoutes } from './api/routes';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -21,22 +21,26 @@ const fetchSpaShell = (c: Context<{ Bindings: Env }>) => {
 app.get('/', async (c) => {
   const host = c.req.header('Host') ?? '';
   const url = new URL(c.req.url);
-  const cfgEpoch = await getCfgEpoch(c.env.proxify_cache);
-  const proxyRoute = await cachedFindRouteForRequest(
-    c.env.proxify_cache,
-    c.env.DB,
-    cfgEpoch,
-    host,
-    url.pathname
-  );
-  if (proxyRoute) {
-    return proxyHandler(c, { route: proxyRoute });
+  try {
+    const cfgEpoch = await getCfgEpoch(c.env.KV_BINDING);
+    const proxyRoute = await cachedFindRouteForRequest(
+      c.env.KV_BINDING,
+      c.env.DB,
+      cfgEpoch,
+      host,
+      url.pathname
+    );
+    if (proxyRoute) {
+      return proxyHandler(c, { route: proxyRoute });
+    }
+  } catch (e) {
+    console.error('[GET /] proxy route resolution failed; serving SPA shell', e);
   }
   return fetchSpaShell(c);
 });
 
 app.route('/admin/api/v1', adminRoutes);
-app.route('/health', healthRoutes);
+app.route('/api', publicApiRoutes);
 
 app.get('/assets/*', (c) => c.env.ASSETS.fetch(c.req.raw));
 
@@ -49,7 +53,7 @@ const serveSpaFallback = async (c: Context<{ Bindings: Env }>) => {
   const url = new URL(c.req.url);
   const path = url.pathname;
 
-  if (path.startsWith('/admin/api')) {
+  if (path.startsWith('/admin/api') || path === '/api' || path.startsWith('/api/')) {
     return c.notFound();
   }
 
@@ -66,6 +70,8 @@ app.get('/admin', serveSpaFallback);
 app.get('/admin/*', serveSpaFallback);
 app.get('/docs', serveSpaFallback);
 app.get('/docs/*', serveSpaFallback);
+app.get('/health', serveSpaFallback);
+app.get('/health/*', serveSpaFallback);
 
 app.all('*', (c) => proxyHandler(c));
 

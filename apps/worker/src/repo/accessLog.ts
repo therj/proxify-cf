@@ -5,6 +5,8 @@ export type AccessLogFilters = {
   route_id?: string | null;
   kid?: string | null;
   outcome?: string | null;
+  /** Case-insensitive substring match on `host` or `path`. */
+  host_path_contains?: string | null;
   since?: number | null;
   until?: number | null;
   limit?: number;
@@ -70,6 +72,11 @@ export async function appendAccessLog(db: D1Database, row: NewAccessLog): Promis
     .run();
 }
 
+export async function countAccessLogs(db: D1Database): Promise<number> {
+  const row = await db.prepare('SELECT COUNT(*) AS c FROM access_log').first<{ c: number }>();
+  return Number(row?.c ?? 0);
+}
+
 export async function listAccessLogs(db: D1Database, filters: AccessLogFilters = {}): Promise<AccessLog[]> {
   let i = 1;
   const conditions: string[] = [];
@@ -94,6 +101,12 @@ export async function listAccessLogs(db: D1Database, filters: AccessLogFilters =
     conditions.push(`outcome = ?${i}`);
     binds.push(filters.outcome);
     i++;
+  }
+  if (filters.host_path_contains?.trim()) {
+    const needle = filters.host_path_contains.trim().toLowerCase();
+    conditions.push(`(instr(lower(host), ?${i}) > 0 OR instr(lower(path), ?${i + 1}) > 0)`);
+    binds.push(needle, needle);
+    i += 2;
   }
   if (filters.since != null && filters.since > 0) {
     conditions.push(`ts >= ?${i}`);

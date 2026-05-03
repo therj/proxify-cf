@@ -32,7 +32,7 @@ jobs:
       - name: Build admin UI (Worker static assets)
         run: pnpm --filter admin build
 
-      - name: Deploy Worker to Cloudflare
+      - name: Deploy Worker to Cloudflare (production)
         working-directory: apps/worker
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

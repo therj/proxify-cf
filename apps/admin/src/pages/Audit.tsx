@@ -7,7 +7,9 @@ import { api } from '../lib/api';
 import { AuditLog, Client } from '@proxify-cf/shared';
 import { formatAuditSummary, effectiveClientId, formatAuditTimestamp } from '../lib/auditDisplay';
 import nc from '../components/ui/nativeControls.module.css';
+import tableStyles from '../components/ui/Table.module.css';
 import { AuditEmptyIllustration } from '../components/empty/AuditEmptyIllustration';
+import { AdminPageTitle } from '../components/AdminPageTitle';
 
 const FETCH_LIMIT = 200;
 
@@ -124,81 +126,72 @@ export const Audit = () => {
 
   return (
     <div>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: 16,
-          flexWrap: 'wrap',
-          marginBottom: 24,
-        }}
-      >
-        <h2 style={{ margin: 0 }}>Audit Log</h2>
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={() => {
-            setDetailLog(null);
-            setSummaryOpen(true);
-          }}
-          disabled={isLoading}
-        >
-          Summary
-        </Button>
-      </div>
+      <AdminPageTitle
+        title="Audit Log"
+        actions={
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              setDetailLog(null);
+              setSummaryOpen(true);
+            }}
+            disabled={isLoading}
+          >
+            Summary
+          </Button>
+        }
+      />
 
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 16,
-          alignItems: 'flex-end',
-          marginBottom: 24,
-          padding: 16,
-          borderRadius: 8,
-          border: '1px solid var(--surface-border)',
-          background: 'var(--surface-bg)',
-        }}
+      <Table
+        className={tableStyles.tableFixed}
+        toolbar={
+          <div className={tableStyles.filterStrip}>
+            <div className={`${tableStyles.filterStripField} ${tableStyles.filterStripClient}`}>
+              <label className={nc.fieldLabel}>Client</label>
+              <select className={nc.select} value={filterClientId} onChange={(e) => setFilterClientId(e.target.value)}>
+                <option value="">All clients</option>
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className={`${tableStyles.filterStripField} ${tableStyles.filterStripGrow}`}>
+              <label className={nc.fieldLabel}>Action</label>
+              <select className={nc.select} value={filterAction} onChange={(e) => setFilterAction(e.target.value)}>
+                <option value="">All actions</option>
+                {actions.map((a) => (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className={`${tableStyles.filterStripField} ${tableStyles.filterStripHostPath}`}>
+              <label className={nc.fieldLabel}>Target contains</label>
+              <Input
+                value={targetInput}
+                onChange={(e) => setTargetInput(e.target.value)}
+                placeholder="Substring match on target field"
+              />
+            </div>
+            <div className={tableStyles.filterStripActions}>
+              <Button variant="secondary" type="button" onClick={clearFilters}>
+                Clear filters
+              </Button>
+            </div>
+          </div>
+        }
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 180 }}>
-          <label style={{ fontSize: 12, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Client
-          </label>
-          <select className={nc.select} value={filterClientId} onChange={(e) => setFilterClientId(e.target.value)}>
-            <option value="">All clients</option>
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 200 }}>
-          <label style={{ fontSize: 12, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Action
-          </label>
-          <select className={nc.select} value={filterAction} onChange={(e) => setFilterAction(e.target.value)}>
-            <option value="">All actions</option>
-            {actions.map((a) => (
-              <option key={a} value={a}>
-                {a}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: '1 1 220px', minWidth: 200 }}>
-          <label style={{ fontSize: 12, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Target contains
-          </label>
-          <Input value={targetInput} onChange={(e) => setTargetInput(e.target.value)} placeholder="Substring match on target field" />
-        </div>
-        <Button variant="secondary" type="button" onClick={clearFilters}>
-          Clear filters
-        </Button>
-      </div>
-
-      <Table>
+        <colgroup>
+          <col style={{ width: '18%' }} />
+          <col style={{ width: '14%' }} />
+          <col style={{ width: '14%' }} />
+          <col style={{ width: '18%' }} />
+          <col style={{ width: '36%' }} />
+        </colgroup>
         <thead>
           <tr>
             <Th>Client</Th>
@@ -443,7 +436,9 @@ export const Audit = () => {
                 <thead>
                   <tr>
                     <Th>Action</Th>
-                    <Th style={{ width: 100, textAlign: 'right' }}>Count</Th>
+                    <Th className={tableStyles.thNumeric} style={{ width: 100 }}>
+                      Count
+                    </Th>
                   </tr>
                 </thead>
                 <tbody>
@@ -485,7 +480,9 @@ export const Audit = () => {
                 <thead>
                   <tr>
                     <Th>Client</Th>
-                    <Th style={{ width: 100, textAlign: 'right' }}>Count</Th>
+                    <Th className={tableStyles.thNumeric} style={{ width: 100 }}>
+                      Count
+                    </Th>
                   </tr>
                 </thead>
                 <tbody>

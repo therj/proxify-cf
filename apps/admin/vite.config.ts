@@ -21,7 +21,7 @@ export default defineConfig({
         target: 'http://127.0.0.1:8787',
         changeOrigin: true,
       },
-      '/health': {
+      '/api': {
         target: 'http://127.0.0.1:8787',
         changeOrigin: true,
       },

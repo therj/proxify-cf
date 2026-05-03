@@ -26,6 +26,9 @@
   max-height: 90vh;
   display: flex;
   flex-direction: column;
+  background: var(--modal-panel-bg);
+  border: 1px solid var(--surface-border);
+  box-shadow: var(--glass-shadow);
 }
 
 .header {
@@ -34,6 +37,9 @@
   justify-content: space-between;
   padding: 20px 24px;
   border-bottom: 1px solid var(--modal-divider);
+  background: var(--modal-panel-bg);
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
 }
 
 .title {

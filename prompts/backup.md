@@ -42,6 +42,7 @@ flowchart LR
     Err[error_and_requestId_middleware] --> Router{Router}
     Router -->|"/admin/api/*"| AccessMw[CF_Access_verify]
     AccessMw --> AdminH[Admin_JSON_handlers]
+    Router -->|"/api/*"| PublicAPI[Public_JSON_e.g._health]
     Router -->|"/admin/*"| Assets[Static_assets_React_UI]
     Router -->|else| Auth[Bearer_JWT_verify]
     Auth --> Proxy[Proxy_handler]
@@ -68,6 +69,7 @@ flowchart LR
 
 - Browser hits `/admin/*` — Access policy required at zone/app level.
 - Worker verifies Access JWT for `/admin/api/*`; use `email` as `actor` in audit log.
+- **`GET /api/health`** (under **`/api/*`**) returns JSON liveness (D1 + KV); no Access required. **`/health`** in the SPA is the human-readable status page.
 
 ---
 
@@ -90,6 +92,8 @@ proxify-cf/
           handler.ts             # Host → route → grants → fetch + stream
           headers.ts             # Hop-by-hop strip; templating
           stream.ts              # ReadableStream passthrough
+        api/
+          routes.ts              # Mount public /api/* (e.g. /api/health)
         admin/
           routes.ts              # Mount /admin/api/v1/*
           clients.ts
@@ -105,7 +109,7 @@ proxify-cf/
           logger.ts
         types.ts
       migrations/0001_init.sql
-      wrangler.toml
+      wrangler.jsonc
       test/*.spec.ts             # Vitest + Miniflare or wrangler test
     admin/
       src/
@@ -114,7 +118,7 @@ proxify-cf/
         lib/api.ts               # fetch /admin/api/v1
         pages/                   # Clients, Keys, Routes, Grants, Tokens, Audit
         components/
-      vite.config.ts             # proxy /admin/api → worker in dev
+      vite.config.ts             # proxy /admin/api/v1 and /api → worker in dev
   packages/shared/
     src/schemas.ts               # Zod schemas shared worker + admin
     src/types.ts
@@ -179,7 +183,7 @@ Protected by CF Access verification middleware.
 
 ---
 
-## `wrangler.toml` essentials
+## `wrangler.jsonc` essentials
 
 - `[[d1_databases]]` binding `DB`
 - `kv_namespaces` binding `CACHE` (or name your binding consistently)

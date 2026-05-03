@@ -7,6 +7,8 @@ import { Input } from '../components/ui/Input';
 import { Plus } from 'lucide-react';
 import { api } from '../lib/api';
 import { Client } from '@proxify-cf/shared';
+import { AdminPageTitle } from '../components/AdminPageTitle';
+import { formatDate } from '../lib/formatDateTime';
 export const Clients = () => {
   const navigate = useNavigate();
   const [clients, setClients] = useState<Client[]>([]);
@@ -67,12 +69,14 @@ export const Clients = () => {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h2>Clients</h2>
-        <Button onClick={handleOpenCreate}>
-          <Plus size={16} /> Add Client
-        </Button>
-      </div>
+      <AdminPageTitle
+        title="Clients"
+        actions={
+          <Button onClick={handleOpenCreate}>
+            <Plus size={16} /> Add Client
+          </Button>
+        }
+      />
 
       <Table>
         <thead>
@@ -109,7 +113,7 @@ export const Clients = () => {
                   <Td style={{ fontFamily: 'monospace' }}>{client.id}</Td>
                   <Td style={{ fontWeight: 500 }}>{client.name}</Td>
                   <Td>{client.email}</Td>
-                  <Td>{new Date(client.created_at).toLocaleDateString()}</Td>
+                  <Td>{formatDate(client.created_at)}</Td>
                   <Td>
                     <Button
                       variant="secondary"

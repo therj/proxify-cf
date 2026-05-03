@@ -38,7 +38,9 @@
   --modal-backdrop: rgba(0, 0, 0, 0.65);
   --modal-backdrop-blur: blur(10px);
   --modal-divider: var(--divider-subtle);
-  --modal-footer-bg: rgba(24, 24, 27, 0.6);
+  /* Opaque panel so dialogs (e.g. audit summary) do not show page content through the shell */
+  --modal-panel-bg: #18181b;
+  --modal-footer-bg: #18181b;
   --modal-danger-bg: rgba(248, 113, 113, 0.1);
   --modal-danger-border: rgba(248, 113, 113, 0.22);
 
@@ -59,6 +61,13 @@
   --radius-md: 8px;
   --radius-lg: 16px;
   --transition-fast: 0.2s ease;
+
+  /* Shared app chrome: header grid + admin sidebar column */
+  --app-chrome-max-width: 1280px;
+  --admin-sidebar-width: 260px;
+  --app-chrome-padding-x: 40px;
+  --app-chrome-padding-y: 20px;
+  --app-chrome-padding-left: 0;
 }
 
 @media (prefers-color-scheme: light) {
@@ -102,6 +111,7 @@
     --modal-backdrop: rgba(15, 23, 42, 0.4);
     --modal-backdrop-blur: blur(12px);
     --modal-divider: rgba(148, 163, 184, 0.28);
+    --modal-panel-bg: #fafafa;
     --modal-footer-bg: #fafafa;
     --modal-danger-bg: rgba(254, 226, 226, 0.85);
     --modal-danger-border: rgba(252, 165, 165, 0.9);
@@ -116,6 +126,12 @@
     --code-fg: #0f172a;
 
     --btn-primary-fg: #ffffff;
+
+    --app-chrome-max-width: 1280px;
+    --admin-sidebar-width: 260px;
+    --app-chrome-padding-x: 40px;
+    --app-chrome-padding-y: 20px;
+    --app-chrome-padding-left: 0;
   }
 }
 
@@ -123,6 +139,11 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+html {
+  /* Reserve vertical scrollbar gutter on the viewport so routes do not shift layout */
+  scrollbar-gutter: stable;
 }
 
 body {

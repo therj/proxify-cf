@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import type { Env } from '../env';
 import { SYS_HEALTH_PROBE } from '../cache/keys';
 
-/** All liveness / readiness endpoints live under `/health` (not under `/admin`). */
+/** Mounted at `/health` under `publicApiRoutes` → `GET /api/health`. HTML shell lives at `/health` in the SPA. */
 export const healthRoutes = new Hono<{ Bindings: Env }>();
 
 type CheckResult = { ok: true; latency_ms: number } | { ok: false; latency_ms: number; error: string };
@@ -28,7 +28,7 @@ async function checkKV(kv: KVNamespace | undefined): Promise<CheckResult> {
       ok: false,
       latency_ms: 0,
       error:
-        'KV binding is missing; wrangler [[kv_namespaces]] binding must be "proxify_cache" to match env',
+        'KV binding is missing; wrangler.jsonc kv_namespaces binding must be "KV_BINDING" to match env',
     };
   }
   const t0 = performance.now();
@@ -45,7 +45,7 @@ async function checkKV(kv: KVNamespace | undefined): Promise<CheckResult> {
 }
 
 healthRoutes.get('/', async (c) => {
-  const [d1, kv] = await Promise.all([checkD1(c.env.DB), checkKV(c.env.proxify_cache)]);
+  const [d1, kv] = await Promise.all([checkD1(c.env.DB), checkKV(c.env.KV_BINDING)]);
 
   const allOk = d1.ok && kv.ok;
   const body = {

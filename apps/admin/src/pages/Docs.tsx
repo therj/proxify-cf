@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
+import { ExternalLink } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSlug from 'rehype-slug';
@@ -22,9 +23,27 @@ export const Docs: React.FC = () => {
           <strong>DEPLOY.md</strong>) — same content as in git; edit them to update this page. Covers architecture,
           D1/KV caching and purge, local HMR, and deploy steps.
         </p>
-        <Link className={clsx(btnStyles.button, btnStyles.primary, btnStyles.md)} to="/admin">
-          Go to admin console
-        </Link>
+        <p className={styles.introSecond}>
+          Source and issues:{' '}
+          <a href="https://github.com/therj/proxify-cf" target="_blank" rel="noopener noreferrer">
+            github.com/therj/proxify-cf
+            <ExternalLink className={styles.externalIcon} size={15} strokeWidth={2} aria-hidden />
+          </a>
+        </p>
+        <div className={styles.headerActions}>
+          <a
+            className={clsx(btnStyles.button, btnStyles.secondary, btnStyles.md, styles.headerExternalBtn)}
+            href="https://github.com/therj/proxify-cf"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            View on GitHub
+            <ExternalLink size={16} strokeWidth={2} aria-hidden />
+          </a>
+          <Link className={clsx(btnStyles.button, btnStyles.primary, btnStyles.md)} to="/admin">
+            Go to admin console
+          </Link>
+        </div>
       </header>
 
       <nav className={styles.toc} aria-label="On this page">

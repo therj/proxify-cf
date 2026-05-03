@@ -1,0 +1,93 @@
+/**
+ * Starter config — copy to `wrangler.jsonc` and replace UUIDs / hostnames.
+ *
+ * Only `env.dev` and `env.production`. Always pass `--env` to Wrangler.
+ *   wrangler deploy --env dev
+ *   wrangler deploy --env production
+ *
+ * Create resources (from `apps/worker`):
+ *   wrangler d1 create proxify-db-dev && wrangler kv namespace create proxify_cache_dev
+ *   wrangler d1 create proxify-db && wrangler kv namespace create proxify_cache
+ */
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+
+	"name": "proxify-cf",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-04-30",
+	"compatibility_flags": ["nodejs_compat"],
+	"preview_urls": true,
+	"workers_dev": true,
+
+	"assets": {
+		"directory": "../admin/dist",
+		"binding": "ASSETS",
+		"run_worker_first": true,
+		"not_found_handling": "single-page-application",
+	},
+
+	"env": {
+		"dev": {
+			"name": "proxify-cf-dev",
+			"preview_urls": true,
+			"workers_dev": true,
+
+			// Optional: add "routes": [ { "pattern": "...", "custom_domain": true } ] for a dev hostname.
+
+			"vars": {
+				"CF_ACCESS_TEAM_DOMAIN": "",
+				"CF_ACCESS_AUD": "",
+				"LOCAL_ADMIN_EMAIL": "",
+			},
+
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "proxify-db-dev",
+					"database_id": "00000000-0000-4000-8000-000000000001",
+					"migrations_dir": "./migrations",
+				},
+			],
+
+			"kv_namespaces": [
+				{
+					"binding": "KV_BINDING",
+					"id": "00000000000000000000000000000001",
+				},
+			],
+		},
+
+		"production": {
+			"name": "proxify-cf",
+			"preview_urls": true,
+			"workers_dev": true,
+
+			// Uncomment and edit for your zone / custom domain:
+			// "routes": [
+			//   { "pattern": "api.example.com", "custom_domain": true },
+			// ],
+
+			"vars": {
+				"CF_ACCESS_TEAM_DOMAIN": "",
+				"CF_ACCESS_AUD": "",
+				"LOCAL_ADMIN_EMAIL": "",
+			},
+
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "proxify-db",
+					"database_id": "00000000-0000-4000-8000-000000000000",
+					"migrations_dir": "./migrations",
+				},
+			],
+
+			"kv_namespaces": [
+				{
+					"binding": "KV_BINDING",
+					"id": "00000000000000000000000000000000",
+				},
+			],
+		},
+	},
+}

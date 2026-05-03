@@ -9,6 +9,7 @@ import { api } from '../lib/api';
 import { Key, Client } from '@proxify-cf/shared';
 import nc from '../components/ui/nativeControls.module.css';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { AdminPageTitle } from '../components/AdminPageTitle';
 export const Keys = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -155,17 +156,19 @@ export const Keys = () => {
           </Button>
         </div>
       ) : null}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h2>Keys & Tokens</h2>
-        <Button
-          onClick={() => {
-            if (filterClientId) setFormData((prev) => ({ ...prev, client_id: filterClientId }));
-            setGenerateOpen(true);
-          }}
-        >
-          <Plus size={16} /> Generate Key
-        </Button>
-      </div>
+      <AdminPageTitle
+        title="Keys & Tokens"
+        actions={
+          <Button
+            onClick={() => {
+              if (filterClientId) setFormData((prev) => ({ ...prev, client_id: filterClientId }));
+              setGenerateOpen(true);
+            }}
+          >
+            <Plus size={16} /> Generate Key
+          </Button>
+        }
+      />
 
       <Table>
         <thead>
@@ -216,18 +219,35 @@ export const Keys = () => {
                   <Td>{k.alg}</Td>
                   <Td>{k.revoked_at ? 'Revoked' : 'Active'}</Td>
                   <Td>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }} onClick={(e) => e.stopPropagation()}>
-                      {k.mode === 'server_issued' && !k.revoked_at && (
-                        <Button variant="secondary" size="sm" type="button" onClick={() => openMintModal(k.kid)}>
-                          Mint JWT
-                        </Button>
-                      )}
-                      {!k.revoked_at && (
+                    {!k.revoked_at ? (
+                      <div
+                        style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {/* Ghost Mint JWT reserves width so Revoke aligns with server_issued rows; gap 8 matches Routes */}
+                        <span style={{ display: 'inline-flex', flexShrink: 0 }}>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            type="button"
+                            onClick={k.mode === 'server_issued' ? () => openMintModal(k.kid) : undefined}
+                            disabled={k.mode !== 'server_issued'}
+                            tabIndex={k.mode === 'server_issued' ? undefined : -1}
+                            aria-hidden={k.mode !== 'server_issued' || undefined}
+                            style={
+                              k.mode !== 'server_issued'
+                                ? { visibility: 'hidden', pointerEvents: 'none' }
+                                : undefined
+                            }
+                          >
+                            Mint JWT
+                          </Button>
+                        </span>
                         <Button variant="danger" size="sm" type="button" onClick={() => setRevokeKid(k.kid)}>
                           Revoke
                         </Button>
-                      )}
-                    </div>
+                      </div>
+                    ) : null}
                   </Td>
                 </tr>
               );

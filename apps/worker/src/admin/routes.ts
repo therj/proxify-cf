@@ -28,8 +28,14 @@ import {
   getIssuedTokenByJti,
 } from '../repo/keys';
 import { getGrants, createGrant, revokeGrant } from '../repo/grants';
-import { getAuditLogs, appendAudit, getDistinctAuditActions, type AuditLogFilters } from '../repo/audit';
-import { listAccessLogs, type AccessLogFilters } from '../repo/accessLog';
+import {
+  getAuditLogs,
+  appendAudit,
+  getDistinctAuditActions,
+  countAuditLogs,
+  type AuditLogFilters,
+} from '../repo/audit';
+import { listAccessLogs, countAccessLogs, type AccessLogFilters } from '../repo/accessLog';
 
 export const adminRoutes = new Hono<{ Bindings: Env }>();
 
@@ -48,7 +54,7 @@ adminRoutes.post('/cache/purge', async (c) => {
     if (!parsed.success) {
       return c.json({ error: 'body.scope must be one of: all, metadata' }, 400);
     }
-    const result = await purgeCache(c.env.proxify_cache, parsed.data.scope);
+    const result = await purgeCache(c.env.KV_BINDING, parsed.data.scope);
     await appendAudit(c.env.DB, 'admin', 'CACHE_PURGE', parsed.data.scope, result);
     return c.json({ data: result });
   } catch (error) {
@@ -59,9 +65,9 @@ adminRoutes.post('/cache/purge', async (c) => {
 // --- Routes API ---
 adminRoutes.get('/routes', async (c) => {
   try {
-    const cfgEpoch = await getCfgEpoch(c.env.proxify_cache);
+    const cfgEpoch = await getCfgEpoch(c.env.KV_BINDING);
     const cacheKey = adminRequestCacheKey(c);
-    const routes = await cachedAdminGetJson(c.env.proxify_cache, cfgEpoch, cacheKey, () =>
+    const routes = await cachedAdminGetJson(c.env.KV_BINDING, cfgEpoch, cacheKey, () =>
       getRoutes(c.env.DB)
     );
     return c.json({ data: routes });
@@ -77,7 +83,7 @@ adminRoutes.post('/routes', async (c) => {
     await appendAudit(c.env.DB, 'admin', 'CREATE_ROUTE', routeLabel(route.host, route.path_prefix), body, {
       route_id: route.id,
     });
-    await bumpAfterProxyMutation(c.env.proxify_cache);
+    await bumpAfterProxyMutation(c.env.KV_BINDING);
     return c.json({ data: route }, 201);
   } catch (error) {
     return c.json({ error: String(error) }, 500);
@@ -94,7 +100,7 @@ adminRoutes.put('/routes/:id', async (c) => {
       before: before ?? undefined,
       after: body,
     }, { route_id: id });
-    await bumpAfterProxyMutation(c.env.proxify_cache);
+    await bumpAfterProxyMutation(c.env.KV_BINDING);
     return c.json({ data: route });
   } catch (error) {
     return c.json({ error: String(error) }, 500);
@@ -110,7 +116,7 @@ adminRoutes.delete('/routes/:id', async (c) => {
 
     await deleteRoute(c.env.DB, id);
     await appendAudit(c.env.DB, 'admin', 'DELETE_ROUTE', targetName, { id }, { route_id: id });
-    await bumpAfterProxyMutation(c.env.proxify_cache);
+    await bumpAfterProxyMutation(c.env.KV_BINDING);
     return c.json({ success: true });
   } catch (error) {
     return c.json({ error: String(error) }, 500);
@@ -120,9 +126,9 @@ adminRoutes.delete('/routes/:id', async (c) => {
 adminRoutes.get('/routes/:id/headers', async (c) => {
   try {
     const id = c.req.param('id');
-    const cfgEpoch = await getCfgEpoch(c.env.proxify_cache);
+    const cfgEpoch = await getCfgEpoch(c.env.KV_BINDING);
     const cacheKey = adminRequestCacheKey(c);
-    const headers = await cachedAdminGetJson(c.env.proxify_cache, cfgEpoch, cacheKey, () =>
+    const headers = await cachedAdminGetJson(c.env.KV_BINDING, cfgEpoch, cacheKey, () =>
       getRouteHeaders(c.env.DB, id)
     );
     return c.json({ data: headers });
@@ -152,7 +158,7 @@ adminRoutes.post('/routes/:id/headers', async (c) => {
       meta,
       { route_id: id }
     );
-    await bumpAfterProxyMutation(c.env.proxify_cache);
+    await bumpAfterProxyMutation(c.env.KV_BINDING);
     return c.json({ data: header }, 201);
   } catch (error) {
     return c.json({ error: String(error) }, 500);
@@ -168,7 +174,7 @@ adminRoutes.put('/routes/headers/:header_id', async (c) => {
       return c.json({ error: 'header_value required' }, 400);
     }
     await updateRouteHeaderValue(c.env.DB, header_id, header_value);
-    await bumpAfterProxyMutation(c.env.proxify_cache);
+    await bumpAfterProxyMutation(c.env.KV_BINDING);
     return c.json({ success: true });
   } catch (error) {
     return c.json({ error: String(error) }, 500);
@@ -196,7 +202,7 @@ adminRoutes.delete('/routes/headers/:header_id', async (c) => {
       ? `Removed "${ctx.header_name}" from ${routeLabel(ctx.host, ctx.path_prefix)}`
       : header_id;
     await appendAudit(c.env.DB, 'admin', 'REMOVE_ROUTE_HEADER', target, meta, route_id ? { route_id } : undefined);
-    await bumpAfterProxyMutation(c.env.proxify_cache);
+    await bumpAfterProxyMutation(c.env.KV_BINDING);
     return c.json({ success: true });
   } catch (error) {
     return c.json({ error: String(error) }, 500);
@@ -206,9 +212,9 @@ adminRoutes.delete('/routes/headers/:header_id', async (c) => {
 // --- Clients API ---
 adminRoutes.get('/clients', async (c) => {
   try {
-    const cfgEpoch = await getCfgEpoch(c.env.proxify_cache);
+    const cfgEpoch = await getCfgEpoch(c.env.KV_BINDING);
     const cacheKey = adminRequestCacheKey(c);
-    const clients = await cachedAdminGetJson(c.env.proxify_cache, cfgEpoch, cacheKey, () =>
+    const clients = await cachedAdminGetJson(c.env.KV_BINDING, cfgEpoch, cacheKey, () =>
       getClients(c.env.DB)
     );
     return c.json({ data: clients });
@@ -222,7 +228,7 @@ adminRoutes.post('/clients', async (c) => {
     const body = await c.req.json();
     const client = await createClient(c.env.DB, body);
     await appendAudit(c.env.DB, 'admin', 'CREATE_CLIENT', client.name, body, { client_id: client.id });
-    await bumpAfterProxyMutation(c.env.proxify_cache);
+    await bumpAfterProxyMutation(c.env.KV_BINDING);
     return c.json({ data: client }, 201);
   } catch (error) {
     return c.json({ error: String(error) }, 500);
@@ -253,7 +259,7 @@ adminRoutes.put('/clients/:id', async (c) => {
       },
       { client_id: client.id }
     );
-    await bumpAfterProxyMutation(c.env.proxify_cache);
+    await bumpAfterProxyMutation(c.env.KV_BINDING);
     return c.json({ data: client });
   } catch (error) {
     return c.json({ error: String(error) }, 500);
@@ -264,9 +270,9 @@ adminRoutes.put('/clients/:id', async (c) => {
 adminRoutes.get('/keys', async (c) => {
   try {
     const client_id = c.req.query('client_id') || undefined;
-    const cfgEpoch = await getCfgEpoch(c.env.proxify_cache);
+    const cfgEpoch = await getCfgEpoch(c.env.KV_BINDING);
     const cacheKey = adminRequestCacheKey(c);
-    const keys = await cachedAdminGetJson(c.env.proxify_cache, cfgEpoch, cacheKey, () =>
+    const keys = await cachedAdminGetJson(c.env.KV_BINDING, cfgEpoch, cacheKey, () =>
       getKeys(c.env.DB, { client_id: client_id || null })
     );
     return c.json({ data: keys });
@@ -283,7 +289,7 @@ adminRoutes.post('/keys', async (c) => {
       client_id: key.client_id,
       mode: key.mode,
     }, { client_id: key.client_id, kid: key.kid });
-    await bumpAfterProxyMutation(c.env.proxify_cache);
+    await bumpAfterProxyMutation(c.env.KV_BINDING);
     return c.json({ data: { key, privateJwk } }, 201);
   } catch (error) {
     return c.json({ error: String(error) }, 500);
@@ -303,7 +309,7 @@ adminRoutes.post('/keys/:kid/revoke', async (c) => {
       row ? { kid, client_id: row.client_id, alg: row.alg, mode: row.mode } : { kid },
       { client_id: row?.client_id ?? null, kid }
     );
-    await bumpAfterProxyMutation(c.env.proxify_cache);
+    await bumpAfterProxyMutation(c.env.KV_BINDING);
     return c.json({ success: true });
   } catch (error) {
     return c.json({ error: String(error) }, 500);
@@ -312,9 +318,9 @@ adminRoutes.post('/keys/:kid/revoke', async (c) => {
 
 adminRoutes.get('/tokens', async (c) => {
   try {
-    const cfgEpoch = await getCfgEpoch(c.env.proxify_cache);
+    const cfgEpoch = await getCfgEpoch(c.env.KV_BINDING);
     const cacheKey = adminRequestCacheKey(c);
-    const tokens = await cachedAdminGetJson(c.env.proxify_cache, cfgEpoch, cacheKey, () =>
+    const tokens = await cachedAdminGetJson(c.env.KV_BINDING, cfgEpoch, cacheKey, () =>
       getIssuedTokens(c.env.DB)
     );
     return c.json({ data: tokens });
@@ -343,7 +349,7 @@ adminRoutes.post('/keys/:kid/tokens', async (c) => {
       client_id,
       kid,
     }, { client_id, kid });
-    await bumpAfterProxyMutation(c.env.proxify_cache);
+    await bumpAfterProxyMutation(c.env.KV_BINDING);
     return c.json({ data: { token, issued } });
   } catch (error) {
     return c.json({ error: String(error) }, 500);
@@ -365,7 +371,7 @@ adminRoutes.post('/tokens/:jti/revoke', async (c) => {
         : { jti },
       { client_id: issued?.client_id ?? null, kid: issued?.kid ?? null }
     );
-    await bumpAfterProxyMutation(c.env.proxify_cache);
+    await bumpAfterProxyMutation(c.env.KV_BINDING);
     return c.json({ success: true });
   } catch (error) {
     return c.json({ error: String(error) }, 500);
@@ -377,9 +383,9 @@ adminRoutes.get('/grants', async (c) => {
   try {
     const client_id = c.req.query('client_id') || undefined;
     const route_id = c.req.query('route_id') || undefined;
-    const cfgEpoch = await getCfgEpoch(c.env.proxify_cache);
+    const cfgEpoch = await getCfgEpoch(c.env.KV_BINDING);
     const cacheKey = adminRequestCacheKey(c);
-    const grants = await cachedAdminGetJson(c.env.proxify_cache, cfgEpoch, cacheKey, () =>
+    const grants = await cachedAdminGetJson(c.env.KV_BINDING, cfgEpoch, cacheKey, () =>
       getGrants(c.env.DB, {
         client_id: client_id || null,
         route_id: route_id || null,
@@ -404,7 +410,7 @@ adminRoutes.post('/grants', async (c) => {
       client_id: body.client_id,
       route_id: body.route_id,
     });
-    await bumpAfterProxyMutation(c.env.proxify_cache);
+    await bumpAfterProxyMutation(c.env.KV_BINDING);
     return c.json({ data: grant }, 201);
   } catch (error) {
     return c.json({ error: String(error) }, 500);
@@ -419,7 +425,7 @@ adminRoutes.delete('/grants/:client_id/:route_id', async (c) => {
     await revokeGrant(c.env.DB, client_id, route_id);
     const target = rt ? `Revoked ${routeLabel(rt.host, rt.path_prefix)}` : `Revoked route ${route_id}`;
     await appendAudit(c.env.DB, 'admin', 'REVOKE_GRANT', target, { client_id, route_id }, { client_id, route_id });
-    await bumpAfterProxyMutation(c.env.proxify_cache);
+    await bumpAfterProxyMutation(c.env.KV_BINDING);
     return c.json({ success: true });
   } catch (error) {
     return c.json({ error: String(error) }, 500);
@@ -431,6 +437,7 @@ function parseAccessFilters(c: { req: { query: (k: string) => string | undefined
   const route_id = c.req.query('route_id') || undefined;
   const kid = c.req.query('kid') || undefined;
   const outcome = c.req.query('outcome') || undefined;
+  const host_path = c.req.query('host_path') || undefined;
   const sinceRaw = c.req.query('since');
   const untilRaw = c.req.query('until');
   const limitRaw = c.req.query('limit');
@@ -444,6 +451,7 @@ function parseAccessFilters(c: { req: { query: (k: string) => string | undefined
     route_id: route_id || null,
     kid: kid || null,
     outcome: outcome || null,
+    host_path_contains: host_path?.trim() || null,
     since: Number.isFinite(since as number) ? since : undefined,
     until: Number.isFinite(until as number) ? until : undefined,
     limit: Number.isFinite(limit as number) ? limit : undefined,
@@ -457,8 +465,12 @@ function parseAuditFilters(c: { req: { query: (k: string) => string | undefined 
   const target = c.req.query('target') || undefined;
   const kid = c.req.query('kid') || undefined;
   const route_id = c.req.query('route_id') || undefined;
+  const sinceRaw = c.req.query('since');
+  const untilRaw = c.req.query('until');
   const limitRaw = c.req.query('limit');
   const offsetRaw = c.req.query('offset');
+  const since = sinceRaw !== undefined ? Number(sinceRaw) : undefined;
+  const until = untilRaw !== undefined ? Number(untilRaw) : undefined;
   const limit = limitRaw !== undefined ? Number(limitRaw) : undefined;
   const offset = offsetRaw !== undefined ? Number(offsetRaw) : undefined;
   return {
@@ -467,12 +479,23 @@ function parseAuditFilters(c: { req: { query: (k: string) => string | undefined 
     target_like: target || null,
     kid: kid || null,
     route_id: route_id || null,
+    since: Number.isFinite(since as number) ? since : undefined,
+    until: Number.isFinite(until as number) ? until : undefined,
     limit: Number.isFinite(limit as number) ? limit : undefined,
     offset: Number.isFinite(offset as number) ? offset : undefined,
   };
 }
 
 // --- Access logs API (D1 only; not KV-cached) ---
+adminRoutes.get('/access/count', async (c) => {
+  try {
+    const n = await countAccessLogs(c.env.DB);
+    return c.json({ data: n });
+  } catch (error) {
+    return c.json({ error: String(error) }, 500);
+  }
+});
+
 adminRoutes.get('/access', async (c) => {
   try {
     const logs = await listAccessLogs(c.env.DB, parseAccessFilters(c));
@@ -483,6 +506,15 @@ adminRoutes.get('/access', async (c) => {
 });
 
 // --- Audit API ---
+adminRoutes.get('/audit/count', async (c) => {
+  try {
+    const n = await countAuditLogs(c.env.DB);
+    return c.json({ data: n });
+  } catch (error) {
+    return c.json({ error: String(error) }, 500);
+  }
+});
+
 adminRoutes.get('/audit/actions', async (c) => {
   try {
     const actions = await getDistinctAuditActions(c.env.DB);

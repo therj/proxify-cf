@@ -9,6 +9,8 @@ import { api } from '../lib/api';
 import { Client, ClientRouteGrant, IssuedToken, Key, Route } from '@proxify-cf/shared';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { EntityAuditHistoryModal, type EntityAuditScope } from '../components/EntityAuditHistoryModal';
+import { AdminPageTitle } from '../components/AdminPageTitle';
+import { formatDateTime } from '../lib/formatDateTime';
 
 export const ClientDetail = () => {
   const navigate = useNavigate();
@@ -137,46 +139,41 @@ export const ClientDetail = () => {
         </Link>
       </div>
 
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          gap: 16,
-          marginBottom: 28,
-        }}
-      >
-        <div>
-          <h2 style={{ margin: '0 0 8px' }}>{loading ? '…' : client?.name}</h2>
-          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 14 }}>
-            {loading ? '' : client?.email}
-          </p>
-          <p style={{ margin: '8px 0 0', fontSize: 12, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
-            {clientId}
-          </p>
-        </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          <Button variant="secondary" type="button" onClick={openEdit} disabled={loading || !client}>
-            Edit client
-          </Button>
-          <Button
-            variant="secondary"
-            type="button"
-            onClick={() => clientId && setAuditModalScope({ type: 'client', clientId })}
-            disabled={loading}
-          >
-            Audit history
-          </Button>
-          <Button
-            variant="secondary"
-            type="button"
-            onClick={() => navigate(`/admin/keys?client_id=${encodeURIComponent(clientId)}`)}
-          >
-            Keys page (filtered)
-          </Button>
-        </div>
-      </div>
+      <AdminPageTitle
+        title={loading ? '…' : client?.name ?? 'Client'}
+        description={
+          !loading && client ? (
+            <>
+              <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 14 }}>{client.email}</p>
+              <p style={{ margin: '8px 0 0', fontSize: 12, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
+                {clientId}
+              </p>
+            </>
+          ) : undefined
+        }
+        actions={
+          <>
+            <Button variant="secondary" type="button" onClick={openEdit} disabled={loading || !client}>
+              Edit client
+            </Button>
+            <Button
+              variant="secondary"
+              type="button"
+              onClick={() => clientId && setAuditModalScope({ type: 'client', clientId })}
+              disabled={loading}
+            >
+              Audit history
+            </Button>
+            <Button
+              variant="secondary"
+              type="button"
+              onClick={() => navigate(`/admin/keys?client_id=${encodeURIComponent(clientId)}`)}
+            >
+              Keys page (filtered)
+            </Button>
+          </>
+        }
+      />
 
       <section style={{ marginBottom: 32 }}>
         <h3 style={{ margin: '0 0 12px', fontSize: 16 }}>Signing keys</h3>
@@ -298,7 +295,7 @@ export const ClientDetail = () => {
                     <Td style={{ fontFamily: 'monospace', fontSize: 12 }}>{t.jti.slice(0, 12)}…</Td>
                     <Td style={{ fontFamily: 'monospace', fontSize: 12 }}>{t.kid.slice(0, 8)}…</Td>
                     <Td>{t.label ?? '—'}</Td>
-                    <Td>{new Date(t.expires_at).toLocaleString()}</Td>
+                    <Td>{formatDateTime(t.expires_at)}</Td>
                     <Td>
                       <div onClick={(e) => e.stopPropagation()}>
                         {!t.revoked_at && (
@@ -368,7 +365,7 @@ export const ClientDetail = () => {
                     }}
                   >
                     <Td style={{ fontWeight: 500 }}>{label}</Td>
-                    <Td>{new Date(g.granted_at).toLocaleString()}</Td>
+                    <Td>{formatDateTime(g.granted_at)}</Td>
                   </tr>
                 );
               })

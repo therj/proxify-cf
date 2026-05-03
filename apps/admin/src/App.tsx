@@ -14,6 +14,7 @@ import { Keys } from './pages/Keys';
 import { Grants } from './pages/Grants';
 import { Audit } from './pages/Audit';
 import { Access } from './pages/Access';
+import { Health } from './pages/Health';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
         <Route element={<LandingLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/docs" element={<Docs />} />
+          <Route path="/health" element={<Health />} />
         </Route>
         <Route path="/admin" element={<Layout />}>
           <Route index element={<Dashboard />} />

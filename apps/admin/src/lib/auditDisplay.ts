@@ -1,32 +1,6 @@
 import type { AuditLog } from '@proxify-cf/shared';
 
-const MONTH_NAMES = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
-
-/** e.g. 11.26am, 30 April */
-export function formatAuditTimestamp(ts: number): string {
-  const d = new Date(ts);
-  const h24 = d.getHours();
-  const minutes = d.getMinutes();
-  const ampm = h24 >= 12 ? 'pm' : 'am';
-  const h12 = h24 % 12 || 12;
-  const mm = minutes.toString().padStart(2, '0');
-  const day = d.getDate();
-  const monthName = MONTH_NAMES[d.getMonth()];
-  return `${h12}.${mm}${ampm}, ${day} ${monthName}`;
-}
+export { formatDateTime, formatDate, formatDateTime as formatAuditTimestamp } from './formatDateTime';
 
 export function parseAuditMeta(meta: string | null | undefined): Record<string, unknown> {
   if (meta == null || meta === '') return {};

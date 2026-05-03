@@ -3,7 +3,9 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 
-console.log('Applying local D1 migrations (apps/worker)...');
+console.log(
+  'Applying local D1 migrations for Wrangler env `dev` (database_name from wrangler.jsonc, e.g. proxify_demo-db). Create that D1 DB and update apps/worker/wrangler.jsonc if needed.',
+);
 
 try {
   execSync('pnpm --filter worker run db:migrate:local', {
