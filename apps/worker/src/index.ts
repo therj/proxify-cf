@@ -44,7 +44,13 @@ app.route('/api', publicApiRoutes);
 
 app.get('/assets/*', (c) => c.env.ASSETS.fetch(c.req.raw));
 
-/** Vite `public/` root files (not hashed under `/assets/`). Favicon is bundled via `src/assets` + `/assets/*`. */
+/** Vite `public/` copies (stable URLs for crawlers and default `favicon.ico` lookups). */
+app.get('/favicon.svg', (c) => c.env.ASSETS.fetch(c.req.raw));
+app.get('/favicon.ico', (c) => {
+  const u = new URL(c.req.url);
+  u.pathname = '/favicon.svg';
+  return c.redirect(u.toString(), 302);
+});
 app.get('/og-image.svg', (c) => c.env.ASSETS.fetch(c.req.raw));
 
 app.get('/index.html', (c) => c.env.ASSETS.fetch(c.req.raw));
