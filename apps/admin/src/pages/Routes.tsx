@@ -287,8 +287,20 @@ export const Routes = () => {
             </button>
           </div>
 
-          {activeTab === 'details' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gridTemplateRows: '1fr' }}>
+            {/* Details Tab */}
+            <div 
+              style={{ 
+                gridArea: '1 / 1 / 2 / 2',
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: 16,
+                opacity: activeTab === 'details' ? 1 : 0,
+                visibility: activeTab === 'details' ? 'visible' : 'hidden',
+                pointerEvents: activeTab === 'details' ? 'auto' : 'none',
+                transition: 'opacity var(--transition-fast)'
+              }}
+            >
               <Input 
                 label="Host" 
                 placeholder="api.example.com" 
@@ -308,10 +320,20 @@ export const Routes = () => {
                 onChange={e => setFormData({ ...formData, upstream_url: e.target.value })}
               />
             </div>
-          )}
 
-          {activeTab === 'headers' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Custom Headers Tab */}
+            <div 
+              style={{ 
+                gridArea: '1 / 1 / 2 / 2',
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: 16,
+                opacity: activeTab === 'headers' ? 1 : 0,
+                visibility: activeTab === 'headers' ? 'visible' : 'hidden',
+                pointerEvents: activeTab === 'headers' ? 'auto' : 'none',
+                transition: 'opacity var(--transition-fast)'
+              }}
+            >
               {formHeaders.length === 0 ? (
                 <div style={{ color: 'var(--text-secondary)', fontSize: 14 }}>No custom headers mapped to this route.</div>
               ) : (
@@ -382,7 +404,7 @@ export const Routes = () => {
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </Modal>
 

@@ -14,6 +14,7 @@ import {
 import { AdminApiRetryProvider } from '../context/AdminApiRetryContext';
 import { AppHeader } from './AppHeader';
 import { Drawer } from './ui/Drawer';
+import { DemoNotice } from './DemoNotice';
 import styles from './Layout.module.css';
 
 const ADMIN_NAV_DRAWER_ID = 'admin-nav-drawer';
@@ -67,6 +68,7 @@ export const Layout: React.FC = () => {
           <AdminApiRetryProvider>
             <Outlet />
           </AdminApiRetryProvider>
+          <DemoNotice />
         </main>
       </div>
 
