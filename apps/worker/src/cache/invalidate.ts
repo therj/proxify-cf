@@ -1,5 +1,6 @@
 import * as K from './keys';
 import { getCfgEpoch } from './epoch';
+import { safeKvPut } from './safeKv';
 
 export type PurgeScope = 'all' | 'metadata';
 
@@ -11,7 +12,7 @@ export async function purgeCache(kv: KVNamespace, scope: PurgeScope): Promise<{ 
   void scope; // 'all' and 'metadata' are equivalent (single epoch)
   const cfg = await getCfgEpoch(kv);
   const nextCfg = cfg + 1;
-  await kv.put(K.META_CFG_EPOCH, String(nextCfg));
+  await safeKvPut(kv, K.META_CFG_EPOCH, String(nextCfg));
   return { cfg_epoch: nextCfg };
 }
 

@@ -2,7 +2,6 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { Env } from '../env';
 import { getCfgEpoch } from '../cache/epoch';
-import { cachedAdminGetJson, adminRequestCacheKey } from '../cache/adminApi';
 import { bumpAfterProxyMutation, purgeCache } from '../cache/invalidate';
 import {
   getRoutes,
@@ -98,11 +97,7 @@ adminRoutes.get('/dashboard/summary', async (c) => {
 // --- Routes API ---
 adminRoutes.get('/routes', async (c) => {
   try {
-    const cfgEpoch = await getCfgEpoch(c.env.KV_BINDING);
-    const cacheKey = adminRequestCacheKey(c);
-    const routes = await cachedAdminGetJson(c.env.KV_BINDING, cfgEpoch, cacheKey, () =>
-      getRoutes(c.env.DB)
-    );
+    const routes = await getRoutes(c.env.DB);
     return c.json({ data: routes });
   } catch (error) {
     return c.json({ error: String(error) }, 500);
@@ -159,11 +154,7 @@ adminRoutes.delete('/routes/:id', async (c) => {
 adminRoutes.get('/routes/:id/headers', async (c) => {
   try {
     const id = c.req.param('id');
-    const cfgEpoch = await getCfgEpoch(c.env.KV_BINDING);
-    const cacheKey = adminRequestCacheKey(c);
-    const headers = await cachedAdminGetJson(c.env.KV_BINDING, cfgEpoch, cacheKey, () =>
-      getRouteHeaders(c.env.DB, id)
-    );
+    const headers = await getRouteHeaders(c.env.DB, id);
     return c.json({ data: headers });
   } catch (error) {
     return c.json({ error: String(error) }, 500);
@@ -255,11 +246,7 @@ adminRoutes.get('/clients/labels', async (c) => {
 
 adminRoutes.get('/clients', async (c) => {
   try {
-    const cfgEpoch = await getCfgEpoch(c.env.KV_BINDING);
-    const cacheKey = adminRequestCacheKey(c);
-    const clients = await cachedAdminGetJson(c.env.KV_BINDING, cfgEpoch, cacheKey, () =>
-      getClients(c.env.DB)
-    );
+    const clients = await getClients(c.env.DB);
     return c.json({ data: clients });
   } catch (error) {
     return c.json({ error: String(error) }, 500);
@@ -329,11 +316,7 @@ adminRoutes.delete('/clients/:id', async (c) => {
 adminRoutes.get('/keys', async (c) => {
   try {
     const client_id = c.req.query('client_id') || undefined;
-    const cfgEpoch = await getCfgEpoch(c.env.KV_BINDING);
-    const cacheKey = adminRequestCacheKey(c);
-    const keys = await cachedAdminGetJson(c.env.KV_BINDING, cfgEpoch, cacheKey, () =>
-      getKeys(c.env.DB, { client_id: client_id || null })
-    );
+    const keys = await getKeys(c.env.DB, { client_id: client_id || null });
     return c.json({ data: keys });
   } catch (error) {
     return c.json({ error: String(error) }, 500);
@@ -381,11 +364,7 @@ adminRoutes.post('/keys/:kid/revoke', async (c) => {
 
 adminRoutes.get('/tokens', async (c) => {
   try {
-    const cfgEpoch = await getCfgEpoch(c.env.KV_BINDING);
-    const cacheKey = adminRequestCacheKey(c);
-    const tokens = await cachedAdminGetJson(c.env.KV_BINDING, cfgEpoch, cacheKey, () =>
-      getIssuedTokens(c.env.DB)
-    );
+    const tokens = await getIssuedTokens(c.env.DB);
     return c.json({ data: tokens });
   } catch (error) {
     return c.json({ error: String(error) }, 500);
@@ -449,14 +428,10 @@ adminRoutes.get('/grants', async (c) => {
   try {
     const client_id = c.req.query('client_id') || undefined;
     const route_id = c.req.query('route_id') || undefined;
-    const cfgEpoch = await getCfgEpoch(c.env.KV_BINDING);
-    const cacheKey = adminRequestCacheKey(c);
-    const grants = await cachedAdminGetJson(c.env.KV_BINDING, cfgEpoch, cacheKey, () =>
-      getGrants(c.env.DB, {
-        client_id: client_id || null,
-        route_id: route_id || null,
-      })
-    );
+    const grants = await getGrants(c.env.DB, {
+      client_id: client_id || null,
+      route_id: route_id || null,
+    });
     return c.json({ data: grants });
   } catch (error) {
     return c.json({ error: String(error) }, 500);

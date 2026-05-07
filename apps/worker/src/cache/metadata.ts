@@ -4,6 +4,7 @@ import { getKeyByKid, isIssuedTokenRevoked } from '../repo/keys';
 import { hasGrant } from '../repo/grants';
 import * as K from './keys';
 import { KV_CACHE_TTL_SEC } from './ttl';
+import { safeKvGet, safeKvPut } from './safeKv';
 
 function pathForLookup(pathname: string): string {
   return pathname.startsWith('/') ? pathname : `/${pathname}`;
@@ -19,7 +20,7 @@ export async function cachedFindRouteForRequest(
   const host = normalizeIncomingHost(hostHeader);
   const path = pathForLookup(pathname);
   const cacheKey = K.routeLookupKey(cfgEpoch, host, path);
-  const hit = await kv.get(cacheKey, { type: 'text' });
+  const hit = await safeKvGet(kv, cacheKey, { type: 'text' });
   if (hit != null) {
     try {
       const parsed = JSON.parse(hit) as Route | null;
@@ -29,7 +30,7 @@ export async function cachedFindRouteForRequest(
     }
   }
   const route = await findRouteForRequest(db, hostHeader, pathname);
-  await kv.put(cacheKey, JSON.stringify(route), { expirationTtl: KV_CACHE_TTL_SEC });
+  await safeKvPut(kv, cacheKey, JSON.stringify(route), { expirationTtl: KV_CACHE_TTL_SEC });
   return route;
 }
 
@@ -41,11 +42,11 @@ export async function cachedHostHasAnyEnabledRoute(
 ): Promise<boolean> {
   const host = normalizeIncomingHost(hostHeader);
   const cacheKey = K.hostHasRoutesKey(cfgEpoch, host);
-  const hit = await kv.get(cacheKey, { type: 'text' });
+  const hit = await safeKvGet(kv, cacheKey, { type: 'text' });
   if (hit === '1') return true;
   if (hit === '0') return false;
   const has = await hostHasAnyEnabledRoute(db, hostHeader);
-  await kv.put(cacheKey, has ? '1' : '0', { expirationTtl: KV_CACHE_TTL_SEC });
+  await safeKvPut(kv, cacheKey, has ? '1' : '0', { expirationTtl: KV_CACHE_TTL_SEC });
   return has;
 }
 
@@ -74,7 +75,7 @@ export async function cachedGetRouteHeaders(
   routeId: string
 ): Promise<{ header_name: string; header_value: string }[]> {
   const cacheKey = K.routeHeadersKey(cfgEpoch, routeId);
-  const hit = await kv.get(cacheKey, { type: 'text' });
+  const hit = await safeKvGet(kv, cacheKey, { type: 'text' });
   if (hit != null) {
     try {
       const parsed = JSON.parse(hit) as { header_name: string; header_value: string }[];
@@ -88,7 +89,7 @@ export async function cachedGetRouteHeaders(
     header_name: r.header_name,
     header_value: r.header_value,
   }));
-  await kv.put(cacheKey, JSON.stringify(slim), { expirationTtl: KV_CACHE_TTL_SEC });
+  await safeKvPut(kv, cacheKey, JSON.stringify(slim), { expirationTtl: KV_CACHE_TTL_SEC });
   return slim;
 }
 
@@ -104,7 +105,7 @@ export async function cachedGetKeyByKid(
   kid: string
 ): Promise<Key | null> {
   const cacheKey = K.signingKeyKey(cfgEpoch, kid);
-  const hit = await kv.get(cacheKey, { type: 'text' });
+  const hit = await safeKvGet(kv, cacheKey, { type: 'text' });
   if (hit != null) {
     try {
       return JSON.parse(hit) as Key;
@@ -114,11 +115,11 @@ export async function cachedGetKeyByKid(
   }
   const row = await getKeyByKid(db, kid);
   if (!row) {
-    await kv.put(cacheKey, JSON.stringify(null), { expirationTtl: KV_CACHE_TTL_SEC });
+    await safeKvPut(kv, cacheKey, JSON.stringify(null), { expirationTtl: KV_CACHE_TTL_SEC });
     return null;
   }
   const safe = keyForCache(row);
-  await kv.put(cacheKey, JSON.stringify(safe), { expirationTtl: KV_CACHE_TTL_SEC });
+  await safeKvPut(kv, cacheKey, JSON.stringify(safe), { expirationTtl: KV_CACHE_TTL_SEC });
   return safe;
 }
 
@@ -130,13 +131,13 @@ export async function cachedHasGrant(
   routeId: string
 ): Promise<boolean> {
   const cacheKey = K.grantKey(cfgEpoch, clientId, routeId);
-  const hit = await kv.get(cacheKey, { type: 'text' });
+  const hit = await safeKvGet(kv, cacheKey, { type: 'text' });
   if (hit != null) {
     if (hit === '1') return true;
     if (hit === '0') return false;
   }
   const ok = await hasGrant(db, clientId, routeId);
-  await kv.put(cacheKey, ok ? '1' : '0', { expirationTtl: KV_CACHE_TTL_SEC });
+  await safeKvPut(kv, cacheKey, ok ? '1' : '0', { expirationTtl: KV_CACHE_TTL_SEC });
   return ok;
 }
 
@@ -147,12 +148,12 @@ export async function cachedIsIssuedTokenRevoked(
   jti: string
 ): Promise<boolean> {
   const cacheKey = K.jtiRevocationKey(cfgEpoch, jti);
-  const hit = await kv.get(cacheKey, { type: 'text' });
+  const hit = await safeKvGet(kv, cacheKey, { type: 'text' });
   if (hit != null) {
     if (hit === '1') return true;
     if (hit === '0') return false;
   }
   const revoked = await isIssuedTokenRevoked(db, jti);
-  await kv.put(cacheKey, revoked ? '1' : '0', { expirationTtl: KV_CACHE_TTL_SEC });
+  await safeKvPut(kv, cacheKey, revoked ? '1' : '0', { expirationTtl: KV_CACHE_TTL_SEC });
   return revoked;
 }
