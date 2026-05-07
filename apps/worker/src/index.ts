@@ -5,6 +5,7 @@ import { Env } from './env';
 import { getCfgEpoch } from './cache/epoch';
 import { cachedFindRouteForRequest } from './cache/metadata';
 import { publicApiRoutes } from './api/routes';
+import { runDemoCleanup } from './cron/cleanup';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -95,4 +96,9 @@ app.on(['GET', 'HEAD'], '/health/*', serveSpaFallback);
 
 app.all('*', (c) => proxyHandler(c));
 
-export default app;
+export default {
+  fetch: app.fetch,
+  scheduled: async (event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {
+    ctx.waitUntil(runDemoCleanup(env));
+  },
+};

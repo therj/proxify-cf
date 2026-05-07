@@ -61,6 +61,11 @@
 				"LOCAL_ADMIN_EMAIL": "",
 				// Optional comma-separated hosts: suppress access_log rows for outcome no_route only (wrong-path noise still skipped when host has zero D1 routes).
 				"ACCESS_LOG_OMIT_NO_ROUTE_HOSTS": "",
+				// If set to a number (e.g. "1440" for 24h), cron will delete data older than this many minutes.
+				"DEMO_CLEANUP_RETENTION_MINUTES": "1440" // omit or set 0 to disable data cleanup
+			},
+			"triggers": {
+				"crons": ["0 * * * *"]
 			},
 
 			// D1: `database_name` must match `wrangler d1 migrations apply <name> --env dev`.
@@ -107,6 +112,10 @@
 				"CF_ACCESS_AUD": "",
 				"LOCAL_ADMIN_EMAIL": "mail@rjoshi.net",
 				"ACCESS_LOG_OMIT_NO_ROUTE_HOSTS": "",
+				"DEMO_CLEANUP_RETENTION_MINUTES": "0", // omit or set 0 to disable data cleanup
+			},
+			"triggers": {
+				"crons": ["0 * * * *"] // run every hour
 			},
 
 			"d1_databases": [

@@ -19,9 +19,11 @@
   --divider-subtle: rgba(148, 163, 184, 0.12);
 
   --accent-primary: #6366f1;
+  --accent-primary-rgb: 99, 102, 241;
   --accent-primary-hover: #4f46e5;
   --accent-soft: rgba(99, 102, 241, 0.22);
   --accent-danger: #ef4444;
+  --accent-danger-rgb: 239, 68, 68;
   --accent-danger-hover: #dc2626;
 
   --sidebar-bg: rgba(9, 9, 11, 0.92);
@@ -98,9 +100,11 @@
     --table-header-bg: transparent;
 
     --accent-primary: #4f46e5;
+    --accent-primary-rgb: 79, 70, 229;
     --accent-primary-hover: #4338ca;
     --accent-soft: rgba(79, 70, 229, 0.12);
     --accent-danger: #dc2626;
+    --accent-danger-rgb: 220, 38, 38;
     --accent-danger-hover: #b91c1c;
 
     --sidebar-bg: #fafafa;

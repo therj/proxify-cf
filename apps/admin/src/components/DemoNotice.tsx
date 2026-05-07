@@ -1,10 +1,10 @@
 import React from 'react';
 import { Info, Copy, Check } from 'lucide-react';
-import { 
-  PUBLIC_DEMO_ORIGIN, 
-  PUBLIC_DEMO_ORIGIN_ENABLED, 
-  PUBLIC_DEMO_ORIGIN_HOST, 
-  PUBLIC_DEMO_ORIGIN_HEADERS 
+import {
+  PUBLIC_DEMO_ORIGIN_ENABLED,
+  PUBLIC_DEMO_ORIGIN_HOST,
+  PUBLIC_DEMO_ORIGIN_HEADERS,
+  PUBLIC_DEMO_RETENTION_HOURS
 } from '../lib/publicDemoOrigin';
 import styles from './DemoNotice.module.css';
 
@@ -28,15 +28,19 @@ export const DemoNotice: React.FC = () => {
           <span className={styles.title}>Public Demo Mode</span>
         </div>
         <p className={styles.description}>
-          Use these values to test proxy requests against this deployment:
+          <span className={styles.warning}>
+            All data older than {PUBLIC_DEMO_RETENTION_HOURS} hours is automatically deleted on this demo site.
+          </span>
+          <br />
+          Use these values to test proxy requests against this deployment.
         </p>
         <div className={styles.grid}>
           <div className={styles.item}>
             <span className={styles.label}>Host</span>
             <div className={styles.valueRow}>
               <code>{PUBLIC_DEMO_ORIGIN_HOST}</code>
-              <button 
-                onClick={() => copyToClipboard(PUBLIC_DEMO_ORIGIN_HOST, -1)} 
+              <button
+                onClick={() => copyToClipboard(PUBLIC_DEMO_ORIGIN_HOST, -1)}
                 className={styles.copyBtn}
                 title="Copy Host"
               >
@@ -49,8 +53,8 @@ export const DemoNotice: React.FC = () => {
               <span className={styles.label}>{h.name}</span>
               <div className={styles.valueRow}>
                 <code>{h.value}</code>
-                <button 
-                  onClick={() => copyToClipboard(h.value, i)} 
+                <button
+                  onClick={() => copyToClipboard(h.value, i)}
                   className={styles.copyBtn}
                   title={`Copy ${h.name}`}
                 >
