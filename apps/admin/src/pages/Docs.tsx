@@ -19,9 +19,7 @@ export const Docs: React.FC = () => {
       <header className={styles.header}>
         <h1 className={styles.title}>Documentation</h1>
         <p className={styles.intro}>
-          Built from the repo root Markdown files (<strong>README.md</strong>, <strong>DEVELOPMENT.md</strong>,{' '}
-          <strong>DEPLOY.md</strong>) - same content as in git; edit them to update this page. Covers architecture,
-          D1/KV caching and purge, local HMR, and deploy steps.
+          Architecture, local development, caching, and deploy steps for proxify-cf.
         </p>
         <p className={styles.introSecond}>
           Source and issues:{' '}

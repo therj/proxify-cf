@@ -15,6 +15,7 @@ export default defineConfig({
     },
   },
   server: {
+    host: true,
     open: '/',
     proxy: {
       '/admin/api/v1': {

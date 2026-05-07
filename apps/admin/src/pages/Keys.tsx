@@ -249,7 +249,7 @@ export const Keys = () => {
                   <Td>
                     {!k.revoked_at ? (
                       <div
-                        style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}
+                        style={{ display: 'flex', flexWrap: 'nowrap', gap: 8, alignItems: 'center' }}
                         onClick={(e) => e.stopPropagation()}
                       >
                         {/* Ghost Mint JWT reserves width so Revoke aligns with server_issued rows; gap 8 matches Routes */}

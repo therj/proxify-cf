@@ -15,8 +15,8 @@
   box-sizing: border-box;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .main {
-    padding: var(--app-chrome-padding-y) 20px var(--app-chrome-padding-y) 20px;
+    padding: var(--app-chrome-padding-y) 16px var(--app-chrome-padding-y) 16px;
   }
 }

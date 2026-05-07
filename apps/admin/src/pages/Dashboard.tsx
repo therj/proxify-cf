@@ -72,8 +72,6 @@ export const Dashboard = () => {
 
   const accessSeeMore =
     !isLoading && !accessPreviewFailed && recentAccess.length >= DASHBOARD_ACCESS_LIMIT;
-  const auditSeeMore =
-    !isLoading && !auditPreviewFailed && recentActivity.length >= DASHBOARD_AUDIT_LIMIT;
 
   useEffect(() => {
     const loadDashboard = async () => {
@@ -169,7 +167,7 @@ export const Dashboard = () => {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
           gap: 24,
           marginBottom: 32,
         }}
@@ -292,11 +290,6 @@ export const Dashboard = () => {
           </div>
         </Card>
         <div style={sectionFooterLinks}>
-          {auditSeeMore ? (
-            <Link to="/admin/audit" style={sectionFooterLink}>
-              See more
-            </Link>
-          ) : null}
           <Link to="/admin/audit" style={sectionFooterLink}>
             View Audit Logs
           </Link>

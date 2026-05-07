@@ -118,7 +118,8 @@
   font-size: 15px;
   line-height: 1.65;
   color: var(--text-secondary);
-  overflow-x: auto;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .markdownBody :first-child {
@@ -194,6 +195,8 @@
 .markdownBody a {
   color: var(--accent-primary);
   font-weight: 500;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .markdownBody a:hover {
@@ -207,6 +210,11 @@
   border-radius: var(--radius-md);
   background: var(--code-bg);
   color: var(--code-fg);
+}
+
+.markdownBody :not(pre) > code {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .markdownBody pre {
@@ -228,8 +236,11 @@
 }
 
 .markdownBody table {
+  display: block;
   width: 100%;
-  min-width: min(100%, 720px);
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border-collapse: collapse;
   font-size: 14px;
   margin: 16px 0 20px;

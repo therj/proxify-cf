@@ -176,7 +176,7 @@ export const Clients = () => {
                   <Td>{client.disabled_at != null ? 'Disabled' : 'Active'}</Td>
                   <Td>{formatDate(client.created_at)}</Td>
                   <Td>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 8 }}>
                       <Button
                         variant="secondary"
                         size="sm"

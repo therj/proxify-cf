@@ -8,6 +8,7 @@
 
 .table {
   width: 100%;
+  min-width: 700px;
   border-collapse: collapse;
   text-align: left;
   font-size: 14px;
@@ -15,7 +16,11 @@
 
 /* Stable column widths when tbody has no per-column cells (e.g. empty filter results) */
 .tableFixed {
-  table-layout: fixed;
+  min-width: 800px;
+}
+
+.tableWide {
+  min-width: 960px;
 }
 
 .tableFixed .td {
@@ -57,6 +62,7 @@
   transition: background var(--transition-fast);
   text-align: left;
   vertical-align: middle;
+  white-space: nowrap;
 }
 
 .table tbody tr:last-child .td {
@@ -79,7 +85,7 @@
 /* Toolbar above table - same visual weight as .filterRow; widths decoupled from <colgroup> */
 .filterStrip {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: flex-end;
   gap: 12px 16px;
   padding: 12px 16px;
@@ -140,4 +146,13 @@
 
 .filterStripActions {
   flex: 0 0 auto;
+}
+
+@media (max-width: 768px) {
+  .filterStripActions {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 8px;
+  }
 }

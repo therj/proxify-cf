@@ -183,7 +183,7 @@ export const Access = () => {
       ) : null}
 
       <Table
-        className={tableStyles.tableFixed}
+        className={`${tableStyles.tableFixed} ${tableStyles.tableWide}`}
         toolbar={
           <div className={tableStyles.filterStrip}>
             <div className={tableStyles.filterStripFields}>

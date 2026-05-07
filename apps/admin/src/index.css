@@ -68,6 +68,10 @@
   --app-chrome-padding-x: 40px;
   --app-chrome-padding-y: 20px;
   --app-chrome-padding-left: 0;
+  /* Height of the sticky AppHeader — used to offset sticky children below it */
+  --header-height: 72px;
+  /* Lighter backdrop for side drawers (modals use --modal-backdrop at 0.8 opacity) */
+  --drawer-backdrop: rgba(0, 0, 0, 0.45);
 }
 
 @media (prefers-color-scheme: light) {
@@ -132,6 +136,14 @@
     --app-chrome-padding-x: 40px;
     --app-chrome-padding-y: 20px;
     --app-chrome-padding-left: 0;
+    --drawer-backdrop: rgba(15, 23, 42, 0.35);
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    /* Mobile header: padding-y (20px × 2) + hamburger button (40px) */
+    --header-height: 80px;
   }
 }
 

@@ -203,7 +203,7 @@ export const ClientDetail = () => {
                 </strong>
                 {client.disabled_at != null ? '. JWT access is denied until re-enabled.' : null}
               </p>
-              <p style={{ margin: '8px 0 0', fontSize: 12, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
+              <p style={{ margin: '8px 0 0', fontSize: 12, fontFamily: 'monospace', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
                 {clientId}
               </p>
             </>

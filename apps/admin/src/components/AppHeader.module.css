@@ -18,15 +18,12 @@
     var(--app-chrome-padding-left);
   min-height: 72px;
   box-sizing: border-box;
-  display: grid;
-  grid-template-columns: var(--admin-sidebar-width) 1fr var(--admin-sidebar-width);
+  display: flex;
   align-items: center;
-  column-gap: 0;
-  row-gap: 8px;
 }
 
 .brandSlot {
-  justify-self: start;
+  flex: 0 0 var(--admin-sidebar-width);
   min-width: 0;
   /* Match admin sidebar `.navItem` horizontal padding (12px 16px → 16px inset) */
   padding-left: 16px;
@@ -35,23 +32,54 @@
 
 .nav {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  flex: 1 0 auto;
   min-width: 0;
+  overflow: hidden;
 }
 
 .headerSpacer {
+  flex: 0 1 var(--admin-sidebar-width);
   min-width: 0;
 }
 
-@media (max-width: 640px) {
+.menuButton {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  transition: background-color var(--transition-fast), color var(--transition-fast),
+    border-color var(--transition-fast);
+  flex: 0 0 auto;
+}
+
+.menuButton:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+  border-color: var(--surface-border);
+}
+
+.navLinkInner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (max-width: 768px) {
   .headerInner {
-    grid-template-columns: 1fr;
-    padding: var(--app-chrome-padding-y) 20px var(--app-chrome-padding-y) 20px;
+    display: flex;
+    justify-content: space-between;
+    padding: var(--app-chrome-padding-y) 16px var(--app-chrome-padding-y) 16px;
     min-height: auto;
-    justify-items: stretch;
+    align-items: center;
   }
 
   .headerSpacer {
@@ -59,11 +87,16 @@
   }
 
   .brandSlot {
-    justify-self: start;
+    flex: 0 1 auto;
+    padding-left: 0;
   }
 
   .nav {
-    justify-content: center;
+    display: none;
+  }
+
+  .menuButton {
+    display: inline-flex;
   }
 }
 
@@ -75,6 +108,7 @@
   color: var(--text-secondary);
   text-decoration: none;
   border: 1px solid transparent;
+  white-space: nowrap;
   transition: background-color var(--transition-fast), color var(--transition-fast),
     border-color var(--transition-fast);
 }
@@ -88,4 +122,10 @@
 .navLinkActive {
   background: var(--nav-active-bg);
   color: var(--accent-primary);
+}
+
+.navLinkDrawer {
+  min-height: 48px;
+  padding: 12px 16px;
+  font-size: 15px;
 }

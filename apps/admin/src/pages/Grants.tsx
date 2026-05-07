@@ -215,7 +215,7 @@ export const Grants = () => {
                   <Td style={{ fontWeight: 500 }}>{routeHost}</Td>
                   <Td>{formatDateTime(g.granted_at)}</Td>
                   <Td>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }} onClick={(e) => e.stopPropagation()}>
+                    <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 8 }} onClick={(e) => e.stopPropagation()}>
                       <Button
                         variant="danger"
                         size="sm"
