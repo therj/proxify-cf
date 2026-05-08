@@ -1,5 +1,6 @@
 {
   "name": "proxify-cf",
+  "version": "1.0.0-rc1",
   "private": true,
   "scripts": {
     "setup": "tsx scripts/setup.ts",
