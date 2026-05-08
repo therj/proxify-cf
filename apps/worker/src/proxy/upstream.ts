@@ -14,12 +14,25 @@ const HOP_BY_HOP = new Set([
 export function buildUpstreamRequestUrl(route: Route, reqUrl: URL): URL {
   const upstream = new URL(route.upstream_url);
   const prefix = route.path_prefix || '/';
-  let tail = reqUrl.pathname;
-  if (prefix !== '/') {
-    tail = reqUrl.pathname.startsWith(prefix)
-      ? reqUrl.pathname.slice(prefix.length) || '/'
-      : '/';
+  let tail: string;
+
+  if (route.strip_prefix === 0) {
+    tail = reqUrl.pathname;
+  } else {
+    if (prefix !== '/') {
+      const prefixNorm = prefix.endsWith('/') ? prefix : `${prefix}/`;
+      if (reqUrl.pathname === prefix || reqUrl.pathname + '/' === prefix) {
+        tail = '/';
+      } else if (reqUrl.pathname.startsWith(prefixNorm)) {
+        tail = '/' + reqUrl.pathname.slice(prefixNorm.length);
+      } else {
+        tail = reqUrl.pathname;
+      }
+    } else {
+      tail = reqUrl.pathname;
+    }
   }
+
   const basePath = upstream.pathname.replace(/\/$/, '');
   const tailNorm = tail.startsWith('/') ? tail : `/${tail}`;
   let pathname = `${basePath}${tailNorm}`.replace(/\/+/g, '/');

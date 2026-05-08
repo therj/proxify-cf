@@ -27,7 +27,7 @@ export const Routes = () => {
 
   // Form State
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ host: '', path_prefix: '/', upstream_url: '' });
+  const [formData, setFormData] = useState({ host: '', path_prefix: '/', upstream_url: '', match_subpaths: 0, strip_prefix: 1 });
   
   // Headers Form State
   const [formHeaders, setFormHeaders] = useState<{ id?: string; header_name: string; header_value: string }[]>([]);
@@ -72,7 +72,7 @@ export const Routes = () => {
 
   const handleOpenCreate = () => {
     setEditingId(null);
-    setFormData({ host: '', path_prefix: '/', upstream_url: '' });
+    setFormData({ host: '', path_prefix: '/', upstream_url: '', match_subpaths: 0, strip_prefix: 1 });
     setFormHeaders([]);
     resetHeaderDraft();
     setError(null);
@@ -82,7 +82,7 @@ export const Routes = () => {
 
   const handleOpenEdit = async (r: Route) => {
     setEditingId(r.id);
-    setFormData({ host: r.host, path_prefix: r.path_prefix, upstream_url: r.upstream_url });
+    setFormData({ host: r.host, path_prefix: r.path_prefix, upstream_url: r.upstream_url, match_subpaths: r.match_subpaths ?? 0, strip_prefix: r.strip_prefix ?? 1 });
     setFormHeaders([]); // Clear previous
     resetHeaderDraft();
     setError(null);
@@ -237,8 +237,15 @@ export const Routes = () => {
                   }}
                 >
                   <Td style={{ fontWeight: 500 }}>{route.host}</Td>
-                  <Td style={{ fontFamily: 'monospace', color: 'var(--accent-primary)' }}>{route.path_prefix}</Td>
-                  <Td style={{ color: 'var(--text-secondary)' }}>{route.upstream_url}</Td>
+                  <Td style={{ fontFamily: 'monospace', color: 'var(--accent-primary)' }}>
+                    {route.path_prefix}{route.match_subpaths === 1 ? '/*' : ''}
+                  </Td>
+                  <Td style={{ color: 'var(--text-secondary)' }}>
+                    {route.upstream_url}
+                    {route.strip_prefix === 0 && (
+                      <span style={{ fontSize: 11, marginLeft: 6, opacity: 0.7 }}>(full path)</span>
+                    )}
+                  </Td>
                   <Td>
                     <div style={{ display: 'flex', gap: 8 }} onClick={(e) => e.stopPropagation()}>
                       <Button variant="secondary" size="sm" type="button" onClick={() => handleOpenEdit(route)}>
@@ -319,6 +326,35 @@ export const Routes = () => {
                 value={formData.upstream_url}
                 onChange={e => setFormData({ ...formData, upstream_url: e.target.value })}
               />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 14 }}>
+                  <input
+                    type="checkbox"
+                    className={nc.select}
+                    style={{ width: 'auto', cursor: 'pointer' }}
+                    checked={formData.match_subpaths === 1}
+                    onChange={(e) => setFormData({ ...formData, match_subpaths: e.target.checked ? 1 : 0 })}
+                  />
+                  Match Sub-paths
+                </label>
+                <span style={{ fontSize: 12, color: 'var(--text-secondary)', marginLeft: 30 }}>
+                  When enabled, this route also matches child paths (e.g. /api matches /api/users).
+                </span>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 14 }}>
+                  <input
+                    type="checkbox"
+                    className={nc.select}
+                    style={{ width: 'auto', cursor: 'pointer' }}
+                    checked={formData.strip_prefix === 1}
+                    onChange={(e) => setFormData({ ...formData, strip_prefix: e.target.checked ? 1 : 0 })}
+                  />
+                  Strip Route Prefix
+                </label>
+                <span style={{ fontSize: 12, color: 'var(--text-secondary)', marginLeft: 30, lineHeight: 1.4 }}>
+                  When enabled, the prefix is removed before forwarding. <br />
+                  Example: Incoming <code>/api/v1/users</code> with prefix <code>/api</code> becomes <code>/v1/users</code> at the upstream.
+                </span>
+              </div>
             </div>
 
             {/* Custom Headers Tab */}

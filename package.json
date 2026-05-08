@@ -1,5 +1,6 @@
 {
   "name": "proxify-cf",
+  "version": "1.0.0-rc1",
   "private": true,
   "scripts": {
     "setup": "tsx scripts/setup.ts",
@@ -18,6 +19,8 @@
     "db:export:remote:dev": "pnpm --filter worker run db:export:remote:dev",
     "db:export:remote:production": "pnpm --filter worker run db:export:remote:production",
     "db:filter:dump": "pnpm --filter worker run db:filter:dump",
+    "db:migrate:dev": "pnpm --filter worker run db:migrate:remote:dev",
+    "db:migrate": "pnpm --filter worker run db:migrate:remote",
     "db:import:local:dev": "pnpm --filter worker run db:import:local:dev",
     "db:import:local:production": "pnpm --filter worker run db:import:local:production"
   },

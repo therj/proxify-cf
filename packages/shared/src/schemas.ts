@@ -33,6 +33,8 @@ export const RouteSchema = z.object({
   preserve_method: z.number(),
   forward_body: z.number(),
   timeout_ms: z.number(),
+  match_subpaths: z.number().default(0),
+  strip_prefix: z.number().default(1),
   created_at: z.number(),
   disabled_at: z.number().nullable()
 });
