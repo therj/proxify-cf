@@ -57,7 +57,15 @@ export async function findRouteForRequest(
     .prepare(
       `SELECT * FROM routes
        WHERE lower(host) = ?1 AND disabled_at IS NULL
-         AND (path_prefix = '/' OR substr(?2, 1, length(path_prefix)) = path_prefix)
+         AND (
+           path_prefix = '/'
+           OR (match_subpaths = 1 AND (
+                ?2 = path_prefix 
+                OR (path_prefix LIKE '%/' AND substr(?2, 1, length(path_prefix)) = path_prefix)
+                OR (path_prefix NOT LIKE '%/' AND substr(?2, 1, length(path_prefix)) = path_prefix AND substr(?2, length(path_prefix) + 1, 1) = '/')
+              ))
+           OR (match_subpaths = 0 AND ?2 = path_prefix)
+         )
        ORDER BY length(path_prefix) DESC
        LIMIT 1`
     )
@@ -87,8 +95,8 @@ export async function createRoute(
   const created_at = Date.now();
 
   await db.prepare(
-    `INSERT INTO routes (id, host, path_prefix, upstream_url, preserve_path, preserve_query, preserve_method, forward_body, timeout_ms, created_at) 
-     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)`
+    `INSERT INTO routes (id, host, path_prefix, upstream_url, preserve_path, preserve_query, preserve_method, forward_body, timeout_ms, match_subpaths, strip_prefix, created_at) 
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)`
   ).bind(
     id, 
     data.host, 
@@ -99,6 +107,8 @@ export async function createRoute(
     data.preserve_method ?? 1, 
     data.forward_body ?? 1, 
     data.timeout_ms ?? 10000, 
+    data.match_subpaths ?? 0,
+    data.strip_prefix ?? 1,
     created_at
   ).run();
 

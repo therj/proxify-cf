@@ -5,6 +5,8 @@
   "scripts": {
     "db:migrate:local": "wrangler d1 migrations apply proxify_demo-db --local --env dev",
     "db:migrate:local:production": "wrangler d1 migrations apply proxify-db --local --env production",
+    "db:migrate:remote:dev": "wrangler d1 migrations apply proxify_demo-db --remote --env dev",
+    "db:migrate:remote": "wrangler d1 migrations apply proxify-db --remote --env production",
     "db:export:remote:dev": "node ../../scripts/d1-tooling.mjs export --env dev",
     "db:export:remote:production": "node ../../scripts/d1-tooling.mjs export --env production",
     "db:filter:dump": "node ../../scripts/filter-d1-dump.mjs",

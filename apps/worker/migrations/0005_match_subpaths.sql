@@ -1,0 +1,1 @@
+ALTER TABLE routes ADD COLUMN match_subpaths INTEGER NOT NULL DEFAULT 0;

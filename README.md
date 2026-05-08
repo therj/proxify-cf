@@ -15,7 +15,10 @@ See [DEVELOPMENT.md](./DEVELOPMENT.md) for local setup (**Vite HMR** on `http://
 
 ## Features
 
-- **Host & path routing**: Map incoming host + path prefix to an upstream URL (with optional header injection and method/body rules).
+- **Host & path routing**: Map incoming host + path prefix to an upstream URL.
+  - **Match Sub-paths**: Optional wildcard matching (e.g., `/api` also matches `/api/v1/users`). Matches only full path segments to prevent accidental overlaps (e.g., `/api` won't match `/apifoo`).
+  - **Strip Route Prefix**: Optionally remove the route prefix before forwarding to upstream. 
+    *   *Example*: Incoming `/api/v1/users` on a route with prefix `/api` and upstream `https://backend/service` targets `https://backend/service/v1/users` when enabled.
 - **JWT authentication**: Mint tokens or verify client-signed JWTs (e.g. **ES256**).
 - **Zero Trust**: Protect the admin UI with Cloudflare Access (optional path bypass for **`/api/*`** public probes — e.g. **`/api/health`** — and, if needed, **`/health`** for the HTML status page).
 - **Access logs**: Append-only proxied traffic telemetry in D1 (host/path, JWT context, upstream status/latency, outcomes including denied requests). **Not** stored in KV and **not** admin-list cached—fresh reads from D1.

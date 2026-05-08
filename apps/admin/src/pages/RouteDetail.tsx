@@ -120,6 +120,11 @@ export const RouteDetail = () => {
               <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)', wordBreak: 'break-all' }}>
                 Upstream: {route.upstream_url}
               </p>
+              <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-secondary)' }}>
+                {route.match_subpaths === 1 ? 'Sub-path matching enabled' : 'Exact path only'}
+                {' · '}
+                {route.strip_prefix === 0 ? 'Full path forwarded' : 'Prefix stripped'}
+              </p>
               <p style={{ margin: '8px 0 0', fontSize: 12, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
                 {routeId}
               </p>
