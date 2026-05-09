@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@proxify-cf/shared": "workspace:*",
-    "hono": "^4.12.16",
+    "hono": "^4.12.18",
     "jose": "^6.2.3",
     "zod": "^4.4.1"
   },
